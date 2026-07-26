@@ -44,10 +44,11 @@ condition indexed by a prime \(p\equiv3\pmod4\).  Its full positive-integer
 statement is formalised in Lean~4 with Mathlib: the development constructs the
 denominators by natural-number division, proves the divisions exact and the
 denominators positive, and concludes the equality in \(\Q\).  We also formalise
-a fixed-divisor lifting theorem and three groups of explicit infinite families,
-including the progressions arising from \(p=3\) and \(d_1=2,5\).  We make no
-claim toward resolving the Erdős--Straus conjecture; the underlying divisor
-split is classical.
+a fixed-divisor lifting theorem, an exact divisibility test for arbitrary
+transport steps, and three groups of explicit infinite families, including the
+progressions arising from \(p=3\) and \(d_1=2,5\).  We make no claim toward
+resolving the Erdős--Straus conjecture; the underlying divisor split is
+classical.
 \end{abstract}
 
 \section{The divisor split}
@@ -252,6 +253,62 @@ including exactness of all divisions.  Finally,
 because a prime \(p\) and the admissible divisor \(d\) are positive.
 \end{proof}
 
+\section{An exact test for transport steps}
+
+The step \(4pd\) in Theorem~\ref{thm:lifting} is sufficient, but its proof does
+not by itself decide whether a smaller step works for a particular admissible
+seed.  The following criterion answers that question without asserting that
+\(4pd\) is always minimal.
+
+\begin{theorem}[transport-step criterion]\label{thm:period-test}
+Let \((p,d,n)\) be offset-admissible and let \(T>0\).  Put \(u=T/4\), using
+natural-number division.  Then
+\[
+  (p,d,n+Tk)\ \text{is offset-admissible for every }k\in\N
+\]
+if and only if
+\begin{equation}\label{eq:period-test}
+  4\mid T,\qquad p\mid T,\qquad
+  d\mid 8u^2,\qquad
+  d\mid u\bigl(n+4X_p(n)+4u\bigr).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+If the progression remains admissible, its congruence modulo \(4\), evaluated
+at \(k=1\), forces \(4\mid T\).  Also \(p\mid T\): otherwise \(T\) is invertible
+modulo \(p\), and some residue \(k\) satisfies \(n+Tk\equiv0\pmod p\), contrary
+to admissibility.
+
+Write \(T=4u\).  Exact expansion gives
+\begin{equation}\label{eq:general-b-transport}
+  B_p(n+4uk)-B_p(n)
+  =
+  u\bigl(n+4X_p(n)\bigr)k+4u^2k^2.
+\end{equation}
+For natural numbers \(a_1,a_2,d\),
+\[
+  d\mid a_1k+a_2k^2\quad\text{for every }k\in\N
+\]
+if and only if
+\[
+  d\mid a_1+a_2,\qquad d\mid2a_2.
+\]
+The forward implication follows by evaluating at \(k=1,2\); the reverse
+implication uses that \(k(k-1)\) is even.  Applying this observation
+to~\eqref{eq:general-b-transport} yields the last two conditions
+in~\eqref{eq:period-test}.
+
+Conversely, the four conditions preserve respectively the congruence modulo
+\(4\), nondivisibility by \(p\), and the two divisibility clauses involving
+\(B_p\).  The remaining positivity and primality clauses are unchanged, so
+every transported triple is offset-admissible.
+\end{proof}
+
+For example, the criterion proves directly that \(T=12\) does not preserve the
+seed \((p,d,n)=(3,2,5)\), whereas Theorem~\ref{thm:lifting} supplies the step
+\(T=24\).  This negative check is included as a Lean regression.
+
 \section{Explicit infinite families}
 
 We record the families formalised in the accompanying Lean file.  In every
@@ -340,6 +397,9 @@ interface consists of:
         \texttt{OffsetAdmissible.isES};
   \item \texttt{offsetX\_add\_period}, \texttt{offsetB\_add\_period}, and
         \texttt{OffsetAdmissible.add\_period};
+  \item \texttt{offsetX\_add\_general}, \texttt{offsetB\_add\_general},
+        \texttt{poly\_dvd\_all}, and the exact transport-step criterion
+        \texttt{OffsetAdmissible.all\_add\_mul\_iff};
   \item \texttt{fixed\_d\_progression} and
         \texttt{fixed\_d\_progression\_strictMono};
   \item \texttt{family\_I\_positive}, \texttt{family\_d2\_24k5},
@@ -356,8 +416,9 @@ check of a polynomial identity.
 The divisor split is classical, and offset choices of \(x\) belong to the
 standard toolkit for Egyptian-fraction problems.  The contribution of this note
 is a compact theorem interface, an end-to-end Lean proof of the positive
-construction, and a small collection of formally checked infinite
-specialisations.  The full Erdős--Straus conjecture remains outside its scope.
+construction, an exact transport-step criterion, and a small collection of
+formally checked infinite specialisations.  The full Erdős--Straus conjecture
+remains outside its scope.
 
 \begin{thebibliography}{9}
 

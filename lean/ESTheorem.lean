@@ -434,7 +434,211 @@ theorem fixed_d_progression_strictMono {p d n : ℕ}
     (Nat.mul_lt_mul_left hc).mpr hab
   exact Nat.add_lt_add_left hm n
 
-/-! ## Fully verified infinite families -/
+/-! ## General transport and period characterization
+
+The lemmas `offsetX_add_period` and `offsetB_add_period` above establish transport
+for the *specific* period `T = 4 * p * d * k`.  The results below work with an
+arbitrary `T` divisible by four.  They are algebraic tools for a subsequent
+characterization of transport periods; no novelty or minimality claim is made
+by these identities alone. -/
+
+/-- General transport identity for `offsetX`: for any `T` with `4 ∣ T`,
+`offsetX(p, n+T) = offsetX(p,n) + T/4`.  (Identity A.) -/
+theorem offsetX_add_general (p n T : ℕ) (hp4 : p % 4 = 3) (hn4 : n % 4 = 1)
+    (hT : 4 ∣ T) :
+    offsetX p (n + T) = offsetX p n + T / 4 := by
+  have hfour_n : 4 ∣ n + p := by apply Nat.dvd_of_mod_eq_zero; omega
+  have hfour_nT : 4 ∣ n + T + p := by omega
+  have hbase : 4 * ((n + p) / 4) = n + p := Nat.mul_div_cancel' hfour_n
+  have hnew : 4 * ((n + T + p) / 4) = n + T + p := Nat.mul_div_cancel' hfour_nT
+  have hT4 : 4 * (T / 4) = T := Nat.mul_div_cancel' hT
+  simp only [offsetX]
+  omega
+
+/-- General transport identity for `offsetB`: for any `T` with `4 ∣ T`, writing
+`u = T/4`, `offsetB(p, n+T) = offsetB(p,n) + u*(n + 4*offsetX(p,n) + 4*u)`.
+(Identity B.) -/
+theorem offsetB_add_general (p n T : ℕ) (hp4 : p % 4 = 3) (hn4 : n % 4 = 1)
+    (hT : 4 ∣ T) :
+    offsetB p (n + T) =
+      offsetB p n + (T / 4) * (n + 4 * offsetX p n + 4 * (T / 4)) := by
+  -- Pull out u = T/4 with the exact equation 4*u = T, so `ring` sees no division.
+  obtain ⟨u, hu⟩ : ∃ u : ℕ, 4 * u = T := ⟨T / 4, Nat.mul_div_cancel' hT⟩
+  have hx := offsetX_add_general p n T hp4 hn4 hT
+  simp only [offsetB, hx, show T / 4 = u from by omega]
+  subst hu
+  ring
+
+/-- Polynomial-divisibility lemma: `d ∣ a₁*k + a₂*k²` for all `k ∈ ℕ` iff
+`d ∣ (a₁+a₂)` and `d ∣ 2*a₂`.  (⟸ uses `k(k−1)` even; ⟹ evaluates at k=1,2.)
+Standalone; used by the period-characterization theorem. -/
+theorem poly_dvd_all (d a1 a2 : ℕ) :
+    (∀ k : ℕ, d ∣ a1 * k + a2 * k * k) ↔ d ∣ (a1 + a2) ∧ d ∣ 2 * a2 := by
+  refine ⟨fun h => ⟨?_, ?_⟩, fun ⟨hs, h2⟩ k => ?_⟩
+  · -- Evaluate at `k = 1`.
+    have h1 : d ∣ a1 * 1 + a2 * 1 * 1 := h 1
+    convert h1 using 1; ring
+  · -- Subtract twice the value at `k = 1` from the value at `k = 2`.
+    have h1 : d ∣ a1 + a2 := by
+      convert h 1 using 1
+      ring
+    have h2k : d ∣ a1 * 2 + a2 * 2 * 2 := h 2
+    have hdouble : d ∣ 2 * (a1 + a2) :=
+      dvd_mul_of_dvd_right h1 2
+    have hsub := Nat.dvd_sub h2k hdouble
+    convert hsub using 1
+    omega
+  · -- For `k+1`, split off `(k+1)(a1+a2)`; the remaining product
+    -- contains the even number `k(k+1)`.
+    rcases k with _ | k
+    · simp
+    · have heq :
+          a1 * (k + 1) + a2 * (k + 1) * (k + 1) =
+            (k + 1) * (a1 + a2) + a2 * ((k + 1) * k) := by
+        ring
+      rw [heq]
+      apply Nat.dvd_add
+      · exact dvd_mul_of_dvd_right hs (k + 1)
+      · obtain ⟨v, hv⟩ := Nat.two_dvd_mul_add_one k
+        have hv' : (k + 1) * k = 2 * v := by
+          simpa [mul_comm] using hv
+        rw [hv']
+        simpa [mul_assoc, mul_comm, mul_left_comm] using
+          dvd_mul_of_dvd_right h2 v
+
+/-- Expansion of `offsetB` along an arbitrary step divisible by four. -/
+theorem offsetB_add_four_mul (p n u k : ℕ)
+    (hp4 : p % 4 = 3) (hn4 : n % 4 = 1) :
+    offsetB p (n + 4 * u * k) =
+      offsetB p n +
+        (u * (n + 4 * offsetX p n)) * k + (4 * u * u) * k * k := by
+  have hfour : 4 ∣ 4 * u * k := by
+    refine ⟨u * k, ?_⟩
+    ring
+  have hquot : (4 * u * k) / 4 = u * k := by
+    simp [mul_assoc]
+  rw [offsetB_add_general p n (4 * u * k) hp4 hn4 hfour, hquot]
+  ring
+
+/-- If no member of the progression `n + T*k` is divisible by a prime `p`,
+then the step `T` is divisible by `p`. -/
+private theorem prime_dvd_step_of_forall_not_dvd (p n T : ℕ)
+    (hp : Nat.Prime p) (hnever : ∀ k : ℕ, ¬ p ∣ n + T * k) :
+    p ∣ T := by
+  by_contra hT
+  letI : Fact p.Prime := ⟨hp⟩
+  have hT0 : (T : ZMod p) ≠ 0 := by
+    intro hz
+    exact hT ((ZMod.natCast_eq_zero_iff T p).mp hz)
+  let a : ZMod p := -(n : ZMod p) / (T : ZMod p)
+  let k : ℕ := a.val
+  have hk : (k : ZMod p) = a := ZMod.natCast_zmod_val a
+  have hzero : ((n + T * k : ℕ) : ZMod p) = 0 := by
+    push_cast
+    rw [hk]
+    dsimp [a]
+    field_simp
+    simp
+  exact hnever k ((ZMod.natCast_eq_zero_iff (n + T * k) p).mp hzero)
+
+namespace OffsetAdmissible
+
+/-- Characterization of all positive transport periods for one admissible seed.
+The first two conditions are forced by the mod-four and nondivisibility
+hypotheses.  The last two are exactly the conditions for the quadratic change
+in `offsetB` to remain divisible by `d`. -/
+theorem all_add_mul_iff {p d n T : ℕ} (h : OffsetAdmissible p d n)
+    (hT0 : 0 < T) :
+    (∀ k : ℕ, OffsetAdmissible p d (n + T * k)) ↔
+      4 ∣ T ∧
+      p ∣ T ∧
+      d ∣ 8 * (T / 4) * (T / 4) ∧
+      d ∣ (T / 4) * (n + 4 * offsetX p n + 4 * (T / 4)) := by
+  rcases h with ⟨hn, hp, hp4, hn4, hpn, hd, hdb, hfirst⟩
+  constructor
+  · intro hall
+    have h4 : 4 ∣ T := by
+      apply Nat.dvd_of_mod_eq_zero
+      have hnT4 := (hall 1).2.2.2
+      omega
+    have hpT : p ∣ T := by
+      apply prime_dvd_step_of_forall_not_dvd p n T hp
+      intro k
+      exact (hall k).2.2.2.2.1
+    rcases h4 with ⟨u, rfl⟩
+    have hpoly :
+        ∀ k : ℕ,
+          d ∣ (u * (n + 4 * offsetX p n)) * k + (4 * u * u) * k * k := by
+      intro k
+      have hnew : d ∣ offsetB p (n + 4 * u * k) :=
+        (hall k).2.2.2.2.2.2.1
+      rw [offsetB_add_four_mul p n u k hp4 hn4] at hnew
+      apply (Nat.dvd_add_iff_right hdb).mpr
+      convert hnew using 1
+      ring
+    have hcoeff :=
+      (poly_dvd_all d (u * (n + 4 * offsetX p n)) (4 * u * u)).mp hpoly
+    have hquot : (4 * u) / 4 = u := by omega
+    refine ⟨by simp, by simpa using hpT, ?_, ?_⟩
+    · simp only [hquot]
+      convert hcoeff.2 using 1
+      ring
+    · simpa [hquot, mul_add, add_mul, mul_assoc, mul_comm, mul_left_comm] using hcoeff.1
+  · rintro ⟨h4, hpT, hdquad, hdlin⟩
+    rcases h4 with ⟨u, rfl⟩
+    have hp4not : ¬ p ∣ 4 := by
+      intro hp4dvd
+      have hp_le : p ≤ 4 := Nat.le_of_dvd (by norm_num) hp4dvd
+      have hp_ge : 2 ≤ p := hp.two_le
+      have : p = 3 := by omega
+      subst p
+      norm_num at hp4dvd
+    have hpu : p ∣ u := by
+      rcases hp.dvd_mul.mp (by simpa [mul_assoc] using hpT) with hp4dvd | hpu
+      · exact (hp4not hp4dvd).elim
+      · exact hpu
+    have hquot : (4 * u) / 4 = u := by omega
+    have hcoeff :
+        d ∣ u * (n + 4 * offsetX p n) + 4 * u * u ∧
+          d ∣ 2 * (4 * u * u) := by
+      constructor
+      · simpa [hquot, mul_add, add_mul, mul_assoc, mul_comm, mul_left_comm] using hdlin
+      · simpa [hquot, pow_two, mul_assoc, mul_comm, mul_left_comm] using hdquad
+    have hpoly :
+        ∀ k : ℕ,
+          d ∣ (u * (n + 4 * offsetX p n)) * k + (4 * u * u) * k * k :=
+      (poly_dvd_all d (u * (n + 4 * offsetX p n)) (4 * u * u)).mpr hcoeff
+    intro k
+    have hshift4 : 4 ∣ 4 * u * k := by
+      refine ⟨u * k, ?_⟩
+      ring
+    have hshiftp : p ∣ 4 * u * k := by
+      simpa [mul_assoc, mul_comm, mul_left_comm] using
+        dvd_mul_of_dvd_right (dvd_mul_of_dvd_right hpu 4) k
+    have hdeltaP :
+        p ∣ (u * (n + 4 * offsetX p n)) * k + (4 * u * u) * k * k := by
+      apply Nat.dvd_add
+      · simpa [mul_assoc, mul_comm, mul_left_comm] using
+          dvd_mul_of_dvd_right
+            (dvd_mul_of_dvd_right hpu (n + 4 * offsetX p n)) k
+      · simpa [mul_assoc, mul_comm, mul_left_comm] using
+          dvd_mul_of_dvd_right
+            (dvd_mul_of_dvd_right (dvd_mul_of_dvd_right hpu 4) u) (k * k)
+    refine ⟨by omega, hp, hp4, ?_, ?_, hd, ?_, ?_⟩
+    · simp [Nat.add_mod, Nat.mod_eq_zero_of_dvd hshift4, hn4]
+    · intro hnew
+      exact hpn ((Nat.dvd_add_iff_left hshiftp).mpr hnew)
+    · rw [offsetB_add_four_mul p n u k hp4 hn4]
+      convert Nat.dvd_add hdb (hpoly k) using 1
+      ring
+    · rw [offsetB_add_four_mul p n u k hp4 hn4]
+      convert Nat.dvd_add hfirst hdeltaP using 1
+      ring
+
+end OffsetAdmissible
+
+/-! ## Fully verified infinite families
+-/
 
 /-- Family I: `n = 12k+9`. -/
 theorem family_I_positive (k : ℕ) :
@@ -467,6 +671,12 @@ private theorem admissible_d5_25 : OffsetAdmissible 3 5 25 := by
 
 private theorem admissible_d5_37 : OffsetAdmissible 3 5 37 := by
   norm_num [OffsetAdmissible, offsetB, offsetX]
+
+/-- Regression: the tempting half-step `12` does not preserve the
+`p = 3, d = 2, n = 5` admissible seed. -/
+example : ¬ ∀ k : ℕ, OffsetAdmissible 3 2 (5 + 12 * k) := by
+  rw [admissible_d2_5.all_add_mul_iff (by norm_num : 0 < 12)]
+  norm_num [offsetX]
 
 /-- The `p=3, d1=2` progression `n = 24k+5`. -/
 theorem family_d2_24k5 (k : ℕ) :

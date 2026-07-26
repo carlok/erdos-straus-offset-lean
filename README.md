@@ -25,6 +25,10 @@ symbolic construction and the explicitly listed families.
 - the exact transport identities for `offsetX` and `offsetB`, and
   `OffsetAdmissible.add_period`, preserving admissibility under
   `n ↦ n + 4pdk`;
+- `OffsetAdmissible.all_add_mul_iff`, an exact test for an arbitrary positive
+  step `T` to preserve every member of an admissible seed progression:
+  writing `u = T / 4`, it requires `4 ∣ T`, `p ∣ T`,
+  `d ∣ 8u²`, and `d ∣ u(n + 4 offsetX p n + 4u)`;
 - `fixed_d_progression`, which constructs an `IsES` witness at every transported
   parameter, and `fixed_d_progression_strictMono`, proving those parameters
   form an infinite arithmetic progression;
