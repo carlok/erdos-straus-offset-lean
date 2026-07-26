@@ -32,7 +32,7 @@ symbolic construction and the explicitly listed families.
   paper;
 - regression instances at `k = 0` and `k = 1` for every progression.
 
-The canonical paper is `tex/arxiv.tex`.
+The canonical paper is `tex/erdos-straus-offset.tex`.
 
 ## Build
 
@@ -47,8 +47,8 @@ TeX:
 
 ```bash
 cd tex
-pdflatex -interaction=nonstopmode -halt-on-error arxiv.tex
-pdflatex -interaction=nonstopmode -halt-on-error arxiv.tex
+pdflatex -interaction=nonstopmode -halt-on-error erdos-straus-offset.tex
+pdflatex -interaction=nonstopmode -halt-on-error erdos-straus-offset.tex
 ```
 
 The project pins Lean and Mathlib to `v4.32.1`.
