@@ -45,8 +45,8 @@ denominators by natural-number division, proves the divisions exact and the
 denominators positive, and concludes the equality in \(\Q\).  We also formalise
 a fixed-divisor lifting theorem and three groups of explicit infinite families,
 including the progressions arising from \(p=3\) and \(d_1=2,5\).  We make no
-claim toward resolving the Erdős--Straus conjecture and no priority claim for
-the underlying construction.
+claim toward resolving the Erdős--Straus conjecture; the underlying divisor
+split is classical.
 \end{abstract}
 
 \section{The divisor split}
@@ -339,9 +339,9 @@ with Mathlib.  Its public positive interface consists of:
         \texttt{family\_d5\_60k\(\cdot\)} declarations.
 \end{itemize}
 For every explicit progression, the file also checks the instances \(k=0\) and
-\(k=1\).  The project builds with no \texttt{sorry}.  The theorem statement
-includes the positive denominators and the rational unit-fraction equality;
-the formalisation is therefore not merely a check of a polynomial identity.
+\(k=1\).  The theorem statement includes the positive denominators and the
+rational unit-fraction equality; the formalisation is therefore not merely a
+check of a polynomial identity.
 
 \section{Scope}
 
@@ -349,8 +349,7 @@ The divisor split is classical, and offset choices of \(x\) belong to the
 standard toolkit for Egyptian-fraction problems.  The contribution of this note
 is a compact theorem interface, an end-to-end Lean proof of the positive
 construction, and a small collection of formally checked infinite
-specialisations.  No computational coverage, density statement, or progress
-toward the full Erdős--Straus conjecture is asserted.
+specialisations.  The full Erdős--Straus conjecture remains outside its scope.
 
 \begin{thebibliography}{9}
 

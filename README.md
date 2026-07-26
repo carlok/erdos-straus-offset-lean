@@ -7,9 +7,8 @@ TeX note for a classical divisor-split construction for
 4/n = 1/x + 1/y + 1/z.
 ```
 
-The Erdős–Straus conjecture remains open. This project makes no claim of
-resolving it, no priority claim for the construction or its formalization, and
-no computational coverage or density claim.
+The Erdős–Straus conjecture remains open. This repository is limited to the
+symbolic construction and the explicitly listed families.
 
 ## What is formalized
 
