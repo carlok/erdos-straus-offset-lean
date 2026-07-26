@@ -1,0 +1,17 @@
+# Lean build output
+lean/.lake/
+
+# TeX auxiliary output (the release PDF is tracked)
+tex/*.aux
+tex/*.log
+tex/*.out
+tex/*.toc
+tex/*.synctex.gz
+tex/*.fls
+tex/*.fdb_latexmk
+
+# Editor and operating-system metadata
+.DS_Store
+.zcode/
+*.swp
+*~

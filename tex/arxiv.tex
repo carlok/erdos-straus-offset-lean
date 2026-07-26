@@ -1,0 +1,293 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=2.7cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!55!black,
+  citecolor=blue!55!black,
+  urlcolor=blue!55!black
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\title{A Lean-verified offset construction\\
+for the Erdős--Straus equation}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We give a self-contained formulation of an offset construction for the
+Erdős--Straus equation
+\[
+  \frac4n=\frac1x+\frac1y+\frac1z.
+\]
+The construction packages the classical divisor split into a congruence
+condition indexed by a prime \(p\equiv3\pmod4\).  Its full positive-integer
+statement is formalised in Lean~4 with Mathlib: the development constructs the
+denominators by natural-number division, proves the divisions exact and the
+denominators positive, and concludes the equality in \(\Q\).  We also formalise
+three groups of explicit infinite families, including the progressions arising
+from \(p=3\) and \(d_1=2,5\).  We make no claim toward resolving the
+Erdős--Straus conjecture and no priority claim for the underlying construction.
+\end{abstract}
+
+\section{The divisor split}
+
+The Erdős--Straus conjecture asks whether, for every integer \(n\ge2\), there
+exist \(x,y,z\in\N_{>0}\) satisfying
+\begin{equation}\label{eq:ES}
+  \frac4n=\frac1x+\frac1y+\frac1z.
+\end{equation}
+The conjecture remains open.  We use the following classical algebraic
+reduction; see, for example, Mordell~\cite{Mordell}.
+
+Fix \(x\in\N_{>0}\) with \(4x>n\), and reduce
+\[
+  \frac4n-\frac1x=\frac{4x-n}{nx}=\frac ab,
+  \qquad \gcd(a,b)=1.
+\]
+Multiplication and rearrangement give
+\begin{equation}\label{eq:split}
+  (ay-b)(az-b)=b^2.
+\end{equation}
+
+\begin{lemma}[positive divisor split]\label{lem:split}
+Let \(n,x,a,b,d_1,d_2,y,z\in\N_{>0}\).  Suppose
+\[
+  a=4x-n,\qquad b=nx,\qquad d_1d_2=b^2,
+\]
+and
+\[
+  ay=b+d_1,\qquad az=b+d_2.
+\]
+Then \((x,y,z)\) satisfies \eqref{eq:ES}.
+\end{lemma}
+
+\begin{proof}
+The last three equations are precisely the factorisation
+\eqref{eq:split}.  Expanding it and using \(a=4x-n\) and \(b=nx\) gives
+\[
+  4xyz=n(xy+xz+yz).
+\]
+All four variables \(n,x,y,z\) are nonzero, so division by \(nxyz\) gives
+\eqref{eq:ES}.
+\end{proof}
+
+The Lean development separates these two steps.  It first proves the
+cross-multiplied identity over \(\Z\), then proves that a positive instance over
+\(\N\) gives the rational equality in \(\Q\).
+
+\section{A positive certificate}
+
+The offset form avoids subtraction and is convenient both mathematically and
+formally.
+
+\begin{theorem}[positive offset certificate]\label{thm:certificate}
+Let \(n,x,p,b,d_1,d_2,y,z\in\N\), with \(n,x,p,y,z>0\).  If
+\begin{align}
+  4x &= n+p,                 & b &= nx, \label{eq:certificate-a}\\
+  d_1d_2 &= b^2,             & py &= b+d_1,\qquad pz=b+d_2, \label{eq:certificate-b}
+\end{align}
+then \((x,y,z)\) satisfies \eqref{eq:ES}.
+\end{theorem}
+
+\begin{proof}
+The equations are the positive divisor split with \(a=p=4x-n\).  Equivalently,
+substitution in the cross-multiplied target leaves the multiple
+\[
+  p\,(d_1d_2-b^2),
+\]
+which vanishes by \eqref{eq:certificate-b}.  Positivity then permits passage to
+the rational identity.
+\end{proof}
+
+In Lean, \texttt{IsES n x y z} contains both the four positivity assertions and
+the equality \eqref{eq:ES} in \(\Q\).  Theorem~\ref{thm:certificate} is the
+declaration \texttt{isES\_of\_offset\_certificate}.
+
+\section{The constructive offset theorem}
+
+\begin{theorem}[constructive offset theorem]\label{thm:offset}
+Let \(n,p,d_1\in\N\) satisfy
+\[
+  n\ge2,\qquad p\ \text{prime},\qquad
+  p\equiv3\pmod4,\qquad n\equiv1\pmod4,\qquad p\nmid n.
+\]
+Set
+\[
+  x=\frac{n+p}{4},\qquad b=nx.
+\]
+Suppose \(d_1>0\), \(d_1\mid b\), and
+\begin{equation}\label{eq:first-congruence}
+  p\mid b+d_1,
+\end{equation}
+equivalently \(d_1\equiv-b\pmod p\).  Define
+\begin{equation}\label{eq:witnesses}
+  d_2=\frac{b^2}{d_1},\qquad
+  y=\frac{b+d_1}{p},\qquad
+  z=\frac{b+d_2}{p}.
+\end{equation}
+Then \(x,y,z\in\N_{>0}\), all divisions in \eqref{eq:witnesses} are exact, and
+\((x,y,z)\) satisfies \eqref{eq:ES}.
+\end{theorem}
+
+\begin{proof}
+The congruences on \(n\) and \(p\) show that \(4\mid n+p\), so \(x\in\N\) and
+\(4x=n+p\).  Moreover \(x>0\).  If \(p\mid x\), then
+\(p\mid4x=n+p\), hence \(p\mid n\), a contradiction.  Thus \(p\nmid b=nx\).
+
+Since \(d_1\mid b\), the quotient \(d_2=b^2/d_1\) is exact and positive.  It
+remains to prove \(p\mid b+d_2\).  Work in the field \(\Z/p\Z\).
+Condition \eqref{eq:first-congruence} gives
+\[
+  d_1=-b.
+\]
+The element \(b\) is nonzero, hence so is \(d_1\).  From \(d_1d_2=b^2\), we may
+cancel \(d_1\) to obtain
+\[
+  d_2=-b,
+\]
+and therefore \(p\mid b+d_2\).  Both definitions of \(y,z\) in
+\eqref{eq:witnesses} are consequently exact.  Their numerators are positive,
+so \(y,z>0\).  Theorem~\ref{thm:certificate} now applies.
+\end{proof}
+
+\begin{remark}
+The primality assumption is used only for cancellation modulo \(p\).  The Lean
+proof implements this step in \texttt{ZMod p}; the remainder of the construction
+uses natural numbers, with the final equality stated over the rationals.
+\end{remark}
+
+\section{Explicit infinite families}
+
+We record the families formalised in the accompanying Lean file.  In every
+corollary, \(k\in\N\).
+
+\begin{corollary}[Family I]\label{cor:family-I}
+Let
+\[
+  n=12k+9,\qquad x=3k+3,\qquad b=n(k+1).
+\]
+Then
+\[
+  \frac4n=\frac1x+\frac1{b+1}+\frac1{b(b+1)}.
+\]
+\end{corollary}
+
+\begin{proof}
+Here \(4x-n=3\) and \(\gcd(3,nx)=3\), so the reduced numerator is \(1\).
+Taking \(d_1=1\) and \(d_2=b^2\) in the divisor split gives the displayed
+denominators.  The Lean proof is a direct positive polynomial identity.
+\end{proof}
+
+\begin{corollary}[\(p=3,d_1=2\)]\label{cor:d2}
+Let
+\[
+  n=24k+5\qquad\text{or}\qquad n=24k+13.
+\]
+Put \(x=(n+3)/4\) and \(b=nx\).  Then
+\[
+  \frac4n
+  =\frac1x
+   +\frac1{(b+2)/3}
+   +\frac1{(b+b^2/2)/3}.
+\]
+\end{corollary}
+
+\begin{proof}
+For both progressions, \(n\equiv1\pmod4\), \(3\nmid n\),
+\(2\mid b\), and \(3\mid b+2\).  Theorem~\ref{thm:offset} applies with
+\(p=3\) and \(d_1=2\).
+\end{proof}
+
+\begin{corollary}[\(p=3,d_1=5\)]\label{cor:d5}
+Let
+\[
+  n\in
+  \{60k+5,\ 60k+17,\ 60k+25,\ 60k+37\}.
+\]
+Put \(x=(n+3)/4\) and \(b=nx\).  Then
+\[
+  \frac4n
+  =\frac1x
+   +\frac1{(b+5)/3}
+   +\frac1{(b+b^2/5)/3}.
+\]
+\end{corollary}
+
+\begin{proof}
+Each progression satisfies \(n\equiv1\pmod4\) and \(3\nmid n\).  Direct
+factorisation of either \(n\) or \(x=(n+3)/4\) gives \(5\mid b\), while
+\(3\mid b+5\).  Apply Theorem~\ref{thm:offset} with \(p=3\) and \(d_1=5\).
+\end{proof}
+
+The two progressions in Corollary~\ref{cor:d2} are the nonmultiples of \(3\)
+in the classical Mordell region \(n\equiv5\pmod8\); the remaining progression
+\(n=24k+21\) is contained in Family~I.  The purpose of including them is to
+exhibit the general construction and its formal specialisation, not to claim a
+new residue family.
+
+\section{Lean formalisation}
+
+The formalisation is contained in \texttt{lean/ESTheorem.lean} and uses Lean~4
+with Mathlib.  Its public positive interface consists of:
+\begin{itemize}
+  \item \texttt{IsES} and \texttt{isES\_of\_polynomial};
+  \item \texttt{isES\_of\_offset\_certificate};
+  \item \texttt{second\_divisibility};
+  \item \texttt{constructive\_offset};
+  \item \texttt{family\_I\_positive}, \texttt{family\_d2\_24k5},
+        \texttt{family\_d2\_24k13}, and the four
+        \texttt{family\_d5\_60k\(\cdot\)} declarations.
+\end{itemize}
+For every explicit progression, the file also checks the instances \(k=0\) and
+\(k=1\).  The project builds with no \texttt{sorry}.  The theorem statement
+includes the positive denominators and the rational unit-fraction equality;
+the formalisation is therefore not merely a check of a polynomial identity.
+
+\section{Scope}
+
+The divisor split is classical, and offset choices of \(x\) belong to the
+standard toolkit for Egyptian-fraction problems.  The contribution of this note
+is a compact theorem interface, an end-to-end Lean proof of the positive
+construction, and a small collection of formally checked infinite
+specialisations.  No computational coverage, density statement, or progress
+toward the full Erdős--Straus conjecture is asserted.
+
+\begin{thebibliography}{9}
+
+\bibitem{Mordell}
+L.~J.~Mordell,
+\emph{Diophantine Equations},
+Academic Press, 1969.
+
+\bibitem{Vaughan}
+R.~C.~Vaughan,
+\emph{On a problem of Erdős, Straus and Schinzel},
+J. London Math. Soc. (2) 2 (1970), 391--396.
+
+\bibitem{mathlib}
+The Mathlib Community,
+\emph{Mathlib: the mathematical library of Lean~4},
+\href{https://github.com/leanprover-community/mathlib4}{project repository}.
+
+\end{thebibliography}
+
+\end{document}

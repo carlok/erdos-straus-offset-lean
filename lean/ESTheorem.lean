@@ -1,0 +1,500 @@
+/-
+  ESTheorem.lean — Machine-checked proof of the Erdős–Straus Unified Offset Theorem.
+
+  Lean 4 + Mathlib.  Build:  lake build
+
+  ==================================================================
+  THEOREM (unified_offset_theorem).
+  Let n, x, p, b, d1, d2, y, z ∈ ℤ satisfy
+      (H1)  4 * x   = n + p           x  = (n+p)/4
+      (H2)  b       = n * x           b  = n·(n+p)/4
+      (H3)  d1 * d2 = b * b           d1·d2 = b²
+      (H4)  p * y   = b + d1          y  = (b+d1)/p   (equivalently d1 ≡ -b mod p)
+      (H5)  p * z   = b + d2          z  = (b+d2)/p
+      (H6)  p ≠ 0
+  Then  4 * x * y * z = n * (x*y + x*z + y*z).
+  For positive x, y, z this integer identity is equivalent to
+                                    4/n = 1/x + 1/y + 1/z.
+  ==================================================================
+
+  PROOF (machine-checked below).  Scale the goal by p².  Substituting
+  b = n·x (H2) via `subst`, then p·y = b+d1 (H4) and p·z = b+d2 (H5) via
+  rewrite, turns both sides into polynomials in (n, p, x, d1, d2); the residual
+  from those substitutions is exactly p·(d1·d2 − b²), so `linear_combination`
+  with the witness p·H3 closes the goal.  The p² factor is then cancelled using
+  H6 (p ≠ 0).  Every algebraic step is discharged by `ring`.
+-/
+
+import Mathlib
+
+namespace ESTheorem
+
+/-- Helper: p ≠ 0 (p : ℤ) implies p * p ≠ 0. -/
+lemma sq_nezero_int (q : ℤ) (hq : q ≠ 0) : q * q ≠ 0 := by
+  intro h
+  exact hq ((Int.mul_eq_zero.mp h).elim id id)
+
+/-- The polynomial form of the Erdős–Straus identity.  For positive x, y, z this
+is equivalent to 4/n = 1/x + 1/y + 1/z:
+    4 * x * y * z = n * (x*y + x*z + y*z). -/
+theorem es_polynomial (n x y z : ℤ)
+    (h : 4 * x * y * z = n * (x * y + x * z + y * z)) :
+    4 * x * y * z = n * (x * y + x * z + y * z) := h
+
+/-! ## The engine lemma (the master tool)
+
+The classical "divisor split" for the Erdős–Straus equation.  Fix integers
+`n, x`; set `a = 4x - n` and `b = n x`.  The equation `1/y + 1/z = a/b` is
+equivalent, on multiplying through by `a b y z`, to the factorisation
+`(a y - b)(a z - b) = b^2`.  Hence any factorisation `d1 * d2 = b^2` with
+`a | (b + d1)` and `a | (b + d2)` yields a valid solution `y = (b+d1)/a`,
+`z = (b+d2)/a`.  The lemma below is exactly this, stated with `a = 4x - n` and
+`b = n x` given explicitly (the weaker product form `a * b = (4x-n) * n x` does
+NOT suffice — spurious factorisations of the product admit counterexamples). -/
+
+theorem engine_lemma (n x a b d1 d2 y z : ℤ)
+    (h_a  : a = 4 * x - n)
+    (h_b  : b = n * x)
+    (h_d  : d1 * d2 = b * b)
+    (h_y  : a * y = b + d1)
+    (h_z  : a * z = b + d2)
+    (ha   : a ≠ 0)
+    : 4 * x * y * z = n * (x * y + x * z + y * z) := by
+  -- Substitute a := 4x-n, b := nx everywhere (goal + hypotheses).
+  subst a b
+  -- Scale goal by (4x-n)^2; substitute (4x-n)*y, (4x-n)*z via h_y, h_z (each
+  -- step closed by `ring`), then close the residual with `linear_combination`
+  -- using the witness d1*d2 − (n*x)^2.  Mirrors the unified-theorem proof.
+  suffices H : (4*x-n) * (4*x-n) * (4 * x * y * z)
+             = (4*x-n) * (4*x-n) * (n * (x * y + x * z + y * z)) by
+    have ha' : (4 * x - n) * (4 * x - n) ≠ 0 := sq_nezero_int _ ha
+    exact mul_left_cancel₀ ha' H
+  have L : (4*x-n) * (4*x-n) * (4 * x * y * z) = 4 * x * (n*x + d1) * (n*x + d2) := by
+    rw [← h_y, ← h_z]; ring
+  have R : (4*x-n) * (4*x-n) * (n * (x * y + x * z + y * z))
+         = n * ((4*x-n) * x * (n*x + d1) + (4*x-n) * x * (n*x + d2) + (n*x + d1) * (n*x + d2)) := by
+    rw [← h_y, ← h_z]; ring
+  rw [L, R]
+  linear_combination (4 * x - n) * h_d
+
+/-! ## Mordell's region `n ≡ 3 (mod 4)`
+
+The first of Mordell's classical modular identities.  For `n` of the form
+`4·k − 1` (equivalently `n ≡ 3 mod 4`), choosing `x = k` makes `a = 4x − n = 1`,
+and the symmetric split `d1 = d2 = b` gives `y = z = 2b = n(n+1)/2`.  Parameterising
+by `k` (so `n = 4k − 1`) sidesteps integer-division reasoning. -/
+
+theorem mordell_3mod4 (k : ℤ)
+    : ∃ x y z : ℤ, 4 * x * y * z = (4 * k - 1) * (x * y + x * z + y * z) := by
+  -- n = 4k - 1, x = k, so a = 4k - (4k-1) = 1; y = z = 2*n*x.  Pure polynomial identity.
+  exact ⟨k, 2 * (4 * k - 1) * k, 2 * (4 * k - 1) * k, by ring⟩
+
+/-! ## Family I — `n ≡ 9 (mod 12)`  (i.e. `n ≡ 1 mod 4` ∧ `n ≡ 0 mod 3`)
+
+For `n` of the form `12k + 9`, choosing `x = (n+3)/4 = 3k + 3` makes `4x − n = 3`,
+which (since `3 | n`) reduces to `a = 1, b = n(n+3)/12`.  The split `d1 = 1`,
+`d2 = b²` gives `y = b + 1, z = b(b + 1)`.  Parameterising by `k` keeps the
+verification a pure `ring` check. -/
+
+theorem family_I (k : ℤ)
+    : ∃ x y z : ℤ, 4 * x * y * z = (12 * k + 9) * (x * y + x * z + y * z) := by
+  -- n = 12k+9, x = 3k+3, b = n*x/3 = (12k+9)(3k+3)/3 = (12k+9)(k+1).
+  -- y = b+1, z = b*(b+1).
+  set n := (12 * k + 9 : ℤ)
+  set x := (3 * k + 3 : ℤ)
+  set b := (n * (k + 1) : ℤ)  -- = n*x/3
+  exact ⟨x, b + 1, b * (b + 1), by ring⟩
+
+/-- **Unified Offset Theorem** — the polynomial (integer) form, machine-checked.
+This is the core algebraic content of the writeup's Theorem: under the six
+hypotheses above, the Erdős–Straus polynomial identity holds. -/
+theorem unified_offset_theorem (n x p b d1 d2 y z : ℤ)
+    (h_x : 4 * x = n + p)
+    (h_b : b = n * x)
+    (h_d : d1 * d2 = b * b)
+    (h_y : p * y = b + d1)
+    (h_z : p * z = b + d2)
+    (hp : p ≠ 0)
+    : 4 * x * y * z = n * (x * y + x * z + y * z) := by
+  -- It suffices to prove the goal scaled by p²; then cancel the nonzero p².
+  suffices H : p * p * (4 * x * y * z) = p * p * (n * (x * y + x * z + y * z)) by
+    exact mul_left_cancel₀ (sq_nezero_int p hp) H
+  -- Eliminate b by definitional substitution (H2): b := n * x everywhere.
+  subst b
+  -- Left and right sides, rewritten via H4, H5; each step checked by `ring`.
+  have L : p * p * (4 * x * y * z) = 4 * x * (n * x + d1) * (n * x + d2) := by
+    rw [← h_y, ← h_z]; ring
+  have R : p * p * (n * (x * y + x * z + y * z))
+         = n * (x * p * (n * x + d1) + x * p * (n * x + d2) + (n * x + d1) * (n * x + d2)) := by
+    rw [← h_y, ← h_z]; ring
+  -- Substitute H1 (4x = n+p); the residual is exactly p·(d1·d2 − b²) = p·H3.
+  rw [L, R, h_x]
+  linear_combination p * h_d
+
+/-! ## Positive natural-number formulation
+
+The declarations below are the public, constructive interface used by the paper.
+They retain the integer polynomial theorem above as an internal algebraic core,
+but state the Erdős--Straus equation over positive natural numbers and rationals.
+-/
+
+/-- `IsES n x y z` means that `x,y,z` are positive natural-number denominators
+giving an Erdős--Straus representation of the positive natural number `n`. -/
+def IsES (n x y z : ℕ) : Prop :=
+  0 < n ∧ 0 < x ∧ 0 < y ∧ 0 < z ∧
+    (4 : ℚ) / n = 1 / x + 1 / y + 1 / z
+
+/-- A positive natural-number solution of the cross-multiplied polynomial
+identity gives the corresponding rational unit-fraction identity. -/
+theorem isES_of_polynomial (n x y z : ℕ)
+    (hn : 0 < n) (hx : 0 < x) (hy : 0 < y) (hz : 0 < z)
+    (hpoly : 4 * x * y * z = n * (x * y + x * z + y * z)) :
+    IsES n x y z := by
+  refine ⟨hn, hx, hy, hz, ?_⟩
+  have hnq : (n : ℚ) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hn)
+  have hxq : (x : ℚ) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hx)
+  have hyq : (y : ℚ) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hy)
+  have hzq : (z : ℚ) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hz)
+  have hpolyq :
+      (4 : ℚ) * x * y * z = n * (x * y + x * z + y * z) := by
+    exact_mod_cast hpoly
+  field_simp [hnq, hxq, hyq, hzq]
+  ring_nf at hpolyq ⊢
+  exact hpolyq
+
+/-- Positive certificate theorem.  The five equational hypotheses are a
+division-free certificate for an Erdős--Straus representation. -/
+theorem isES_of_offset_certificate (n x p b d1 d2 y z : ℕ)
+    (hn : 0 < n) (hx : 0 < x) (hp : 0 < p)
+    (hy : 0 < y) (hz : 0 < z)
+    (h_x : 4 * x = n + p)
+    (h_b : b = n * x)
+    (h_d : d1 * d2 = b * b)
+    (h_y : p * y = b + d1)
+    (h_z : p * z = b + d2) :
+    IsES n x y z := by
+  apply isES_of_polynomial n x y z hn hx hy hz
+  have hpz : (p : ℤ) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hp)
+  have hi := unified_offset_theorem
+    (n : ℤ) (x : ℤ) (p : ℤ) (b : ℤ)
+    (d1 : ℤ) (d2 : ℤ) (y : ℤ) (z : ℤ)
+    (by exact_mod_cast h_x)
+    (by exact_mod_cast h_b)
+    (by exact_mod_cast h_d)
+    (by exact_mod_cast h_y)
+    (by exact_mod_cast h_z)
+    hpz
+  exact_mod_cast hi
+
+/-- If the first factor is congruent to `-b` modulo a prime `p`, then so is
+the complementary factor.  The proof performs cancellation in `ZMod p`. -/
+theorem second_divisibility (p b d1 d2 : ℕ)
+    (hp : Nat.Prime p)
+    (hpb : ¬ p ∣ b)
+    (hfactor : d1 * d2 = b * b)
+    (hfirst : p ∣ b + d1) :
+    p ∣ b + d2 := by
+  letI : Fact p.Prime := ⟨hp⟩
+  have hb0 : (b : ZMod p) ≠ 0 := by
+    intro h
+    exact hpb ((ZMod.natCast_eq_zero_iff b p).mp h)
+  have hsum1 : ((b + d1 : ℕ) : ZMod p) = 0 :=
+    (ZMod.natCast_eq_zero_iff (b + d1) p).mpr hfirst
+  have hd1 : (d1 : ZMod p) = -(b : ZMod p) := by
+    push_cast at hsum1
+    linear_combination hsum1
+  have hd10 : (d1 : ZMod p) ≠ 0 := by
+    rw [hd1]
+    exact neg_ne_zero.mpr hb0
+  have hfactor' : (d1 : ZMod p) * d2 = b * b := by
+    simpa using congrArg (fun m : ℕ => (m : ZMod p)) hfactor
+  have hd2 : (d2 : ZMod p) = -(b : ZMod p) := by
+    apply mul_left_cancel₀ hd10
+    calc
+      (d1 : ZMod p) * d2 = b * b := hfactor'
+      _ = (-b) * (-b) := by ring
+      _ = (d1 : ZMod p) * (-b) := by rw [hd1]
+  apply (ZMod.natCast_eq_zero_iff (b + d2) p).mp
+  push_cast
+  rw [hd2]
+  exact add_neg_cancel _
+
+/-- Fully constructive positive offset theorem.
+
+For the displayed inputs, Lean constructs the denominators using natural-number
+division, proves each division exact, proves positivity, and concludes the
+rational Erdős--Straus identity.  The hypothesis `p ∣ b + d1` is the natural
+number form of `d1 ≡ -b (mod p)`. -/
+theorem constructive_offset (n p d1 : ℕ)
+    (hn : 2 ≤ n)
+    (hp : Nat.Prime p)
+    (hp4 : p % 4 = 3)
+    (hn4 : n % 4 = 1)
+    (hpn : ¬ p ∣ n)
+    (hd1 : 0 < d1)
+    (hd1b : d1 ∣ n * ((n + p) / 4))
+    (hfirst : p ∣ n * ((n + p) / 4) + d1) :
+    let x := (n + p) / 4
+    let b := n * x
+    let d2 := b * b / d1
+    let y := (b + d1) / p
+    let z := (b + d2) / p
+    IsES n x y z := by
+  dsimp only
+  let x := (n + p) / 4
+  let b := n * x
+  let d2 := b * b / d1
+  let y := (b + d1) / p
+  let z := (b + d2) / p
+  have hp0 : 0 < p := hp.pos
+  have hn0 : 0 < n := by omega
+  have hfour : 4 ∣ n + p := by
+    apply Nat.dvd_of_mod_eq_zero
+    omega
+  have hxrel : 4 * x = n + p := by
+    dsimp [x]
+    exact Nat.mul_div_cancel' hfour
+  have hx0 : 0 < x := by omega
+  have hb0 : 0 < b := by
+    dsimp [b]
+    exact Nat.mul_pos hn0 hx0
+  have hpx : ¬ p ∣ x := by
+    intro h
+    have hp4x : p ∣ 4 * x := dvd_mul_of_dvd_right h 4
+    rw [hxrel] at hp4x
+    exact hpn ((Nat.dvd_add_iff_left (dvd_refl p)).mpr hp4x)
+  have hpb : ¬ p ∣ b := by
+    intro h
+    rcases hp.dvd_mul.mp (by simpa [b] using h) with h | h
+    · exact hpn h
+    · exact hpx h
+  have hdprod : d1 ∣ b * b := by
+    rcases hd1b with ⟨c, hc⟩
+    refine ⟨c * b, ?_⟩
+    dsimp [b, x] at hc ⊢
+    rw [hc]
+    ring
+  have hfactor : d1 * d2 = b * b := by
+    dsimp [d2]
+    exact Nat.mul_div_cancel' hdprod
+  have hsecond : p ∣ b + d2 :=
+    second_divisibility p b d1 d2 hp hpb hfactor
+      (by simpa [b, x] using hfirst)
+  have hyrel : p * y = b + d1 := by
+    dsimp [y]
+    exact Nat.mul_div_cancel' (by simpa [b, x] using hfirst)
+  have hzrel : p * z = b + d2 := by
+    dsimp [z]
+    exact Nat.mul_div_cancel' hsecond
+  have hd20 : 0 < d2 := by
+    by_contra h
+    have hd2z : d2 = 0 := Nat.eq_zero_of_not_pos h
+    rw [hd2z, mul_zero] at hfactor
+    have : 0 < b * b := Nat.mul_pos hb0 hb0
+    omega
+  have hy0 : 0 < y := by
+    apply Nat.pos_of_ne_zero
+    intro hyz
+    rw [hyz, mul_zero] at hyrel
+    omega
+  have hz0 : 0 < z := by
+    apply Nat.pos_of_ne_zero
+    intro hzz
+    rw [hzz, mul_zero] at hzrel
+    omega
+  exact isES_of_offset_certificate n x p b d1 d2 y z
+    hn0 hx0 hp0 hy0 hz0 hxrel rfl hfactor hyrel hzrel
+
+/-- Direct regression example for the positive certificate:
+`4/5 = 1/2 + 1/4 + 1/20`. -/
+example : IsES 5 2 4 20 := by
+  exact isES_of_offset_certificate 5 2 3 10 2 50 4 20
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
+
+/-! ## Fully verified infinite families -/
+
+/-- Family I: `n = 12k+9`. -/
+theorem family_I_positive (k : ℕ) :
+    let n := 12 * k + 9
+    let x := 3 * k + 3
+    let b := n * (k + 1)
+    IsES n x (b + 1) (b * (b + 1)) := by
+  dsimp only
+  apply isES_of_polynomial
+  · omega
+  · omega
+  · positivity
+  · positivity
+  · ring
+
+/-- The `p=3, d1=2` progression `n = 24k+5`. -/
+theorem family_d2_24k5 (k : ℕ) :
+    let n := 24 * k + 5
+    let x := (n + 3) / 4
+    let b := n * x
+    IsES n x ((b + 2) / 3) ((b + b * b / 2) / 3) := by
+  dsimp only
+  apply constructive_offset (24 * k + 5) 3 2
+  · omega
+  · norm_num
+  · norm_num
+  · omega
+  · intro h
+    rcases h with ⟨c, hc⟩
+    omega
+  · norm_num
+  · have hx : (24 * k + 5 + 3) / 4 = 6 * k + 2 := by omega
+    rw [hx]
+    refine ⟨(24 * k + 5) * (3 * k + 1), ?_⟩
+    ring
+  · have hx : (24 * k + 5 + 3) / 4 = 6 * k + 2 := by omega
+    rw [hx]
+    refine ⟨48 * k * k + 26 * k + 4, ?_⟩
+    ring
+
+/-- The `p=3, d1=2` progression `n = 24k+13`. -/
+theorem family_d2_24k13 (k : ℕ) :
+    let n := 24 * k + 13
+    let x := (n + 3) / 4
+    let b := n * x
+    IsES n x ((b + 2) / 3) ((b + b * b / 2) / 3) := by
+  dsimp only
+  apply constructive_offset (24 * k + 13) 3 2
+  · omega
+  · norm_num
+  · norm_num
+  · omega
+  · intro h
+    rcases h with ⟨c, hc⟩
+    omega
+  · norm_num
+  · have hx : (24 * k + 13 + 3) / 4 = 6 * k + 4 := by omega
+    rw [hx]
+    refine ⟨(24 * k + 13) * (3 * k + 2), ?_⟩
+    ring
+  · have hx : (24 * k + 13 + 3) / 4 = 6 * k + 4 := by omega
+    rw [hx]
+    refine ⟨48 * k * k + 58 * k + 18, ?_⟩
+    ring
+
+/-- The `p=3, d1=5` progression `n = 60k+5`. -/
+theorem family_d5_60k5 (k : ℕ) :
+    let n := 60 * k + 5
+    let x := (n + 3) / 4
+    let b := n * x
+    IsES n x ((b + 5) / 3) ((b + b * b / 5) / 3) := by
+  dsimp only
+  apply constructive_offset (60 * k + 5) 3 5
+  · omega
+  · norm_num
+  · norm_num
+  · omega
+  · intro h
+    rcases h with ⟨c, hc⟩
+    omega
+  · norm_num
+  · have hx : (60 * k + 5 + 3) / 4 = 15 * k + 2 := by omega
+    rw [hx]
+    refine ⟨(12 * k + 1) * (15 * k + 2), ?_⟩
+    ring
+  · have hx : (60 * k + 5 + 3) / 4 = 15 * k + 2 := by omega
+    rw [hx]
+    refine ⟨300 * k * k + 65 * k + 5, ?_⟩
+    ring
+
+/-- The `p=3, d1=5` progression `n = 60k+17`. -/
+theorem family_d5_60k17 (k : ℕ) :
+    let n := 60 * k + 17
+    let x := (n + 3) / 4
+    let b := n * x
+    IsES n x ((b + 5) / 3) ((b + b * b / 5) / 3) := by
+  dsimp only
+  apply constructive_offset (60 * k + 17) 3 5
+  · omega
+  · norm_num
+  · norm_num
+  · omega
+  · intro h
+    rcases h with ⟨c, hc⟩
+    omega
+  · norm_num
+  · have hx : (60 * k + 17 + 3) / 4 = 15 * k + 5 := by omega
+    rw [hx]
+    refine ⟨(60 * k + 17) * (3 * k + 1), ?_⟩
+    ring
+  · have hx : (60 * k + 17 + 3) / 4 = 15 * k + 5 := by omega
+    rw [hx]
+    refine ⟨300 * k * k + 185 * k + 30, ?_⟩
+    ring
+
+/-- The `p=3, d1=5` progression `n = 60k+25`. -/
+theorem family_d5_60k25 (k : ℕ) :
+    let n := 60 * k + 25
+    let x := (n + 3) / 4
+    let b := n * x
+    IsES n x ((b + 5) / 3) ((b + b * b / 5) / 3) := by
+  dsimp only
+  apply constructive_offset (60 * k + 25) 3 5
+  · omega
+  · norm_num
+  · norm_num
+  · omega
+  · intro h
+    rcases h with ⟨c, hc⟩
+    omega
+  · norm_num
+  · have hx : (60 * k + 25 + 3) / 4 = 15 * k + 7 := by omega
+    rw [hx]
+    refine ⟨(12 * k + 5) * (15 * k + 7), ?_⟩
+    ring
+  · have hx : (60 * k + 25 + 3) / 4 = 15 * k + 7 := by omega
+    rw [hx]
+    refine ⟨300 * k * k + 265 * k + 60, ?_⟩
+    ring
+
+/-- The `p=3, d1=5` progression `n = 60k+37`. -/
+theorem family_d5_60k37 (k : ℕ) :
+    let n := 60 * k + 37
+    let x := (n + 3) / 4
+    let b := n * x
+    IsES n x ((b + 5) / 3) ((b + b * b / 5) / 3) := by
+  dsimp only
+  apply constructive_offset (60 * k + 37) 3 5
+  · omega
+  · norm_num
+  · norm_num
+  · omega
+  · intro h
+    rcases h with ⟨c, hc⟩
+    omega
+  · norm_num
+  · have hx : (60 * k + 37 + 3) / 4 = 15 * k + 10 := by omega
+    rw [hx]
+    refine ⟨(60 * k + 37) * (3 * k + 2), ?_⟩
+    ring
+  · have hx : (60 * k + 37 + 3) / 4 = 15 * k + 10 := by omega
+    rw [hx]
+    refine ⟨300 * k * k + 385 * k + 125, ?_⟩
+    ring
+
+/- Regression instances at `k=0` and `k=1` for every progression. -/
+
+example : IsES 9 3 10 90 := by simpa using family_I_positive 0
+example : IsES 21 6 43 1806 := by simpa using family_I_positive 1
+
+example : IsES 5 2 4 20 := by simpa using family_d2_24k5 0
+example : IsES 29 8 78 9048 := by simpa using family_d2_24k5 1
+example : IsES 13 4 18 468 := by simpa using family_d2_24k13 0
+example : IsES 37 10 124 22940 := by simpa using family_d2_24k13 1
+
+example : IsES 5 2 5 10 := by simpa using family_d5_60k5 0
+example : IsES 65 17 370 81770 := by simpa using family_d5_60k5 1
+example : IsES 17 5 30 510 := by simpa using family_d5_60k17 0
+example : IsES 77 20 515 158620 := by simpa using family_d5_60k17 1
+example : IsES 25 7 60 2100 := by simpa using family_d5_60k25 0
+example : IsES 85 22 625 233750 := by simpa using family_d5_60k25 1
+example : IsES 37 10 125 9250 := by simpa using family_d5_60k37 0
+example : IsES 97 25 810 392850 := by simpa using family_d5_60k37 1
+
+end ESTheorem
