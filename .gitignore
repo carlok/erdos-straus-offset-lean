@@ -13,5 +13,6 @@ tex/*.fdb_latexmk
 # Editor and operating-system metadata
 .DS_Store
 .zcode/
+prompts/
 *.swp
 *~
