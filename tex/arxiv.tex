@@ -26,7 +26,8 @@
 
 \title{A Lean-verified offset construction\\
 for the Erdős--Straus equation}
-\author{}
+\author{Carlo Perassi\\
+\href{mailto:carlo.perassi@kiwifarm.it}{\texttt{carlo.perassi@kiwifarm.it}}}
 \date{}
 
 \begin{document}
@@ -326,7 +327,9 @@ new residue family.
 \section{Lean formalisation}
 
 The formalisation is contained in \texttt{lean/ESTheorem.lean} and uses Lean~4
-with Mathlib.  Its public positive interface consists of:
+with Mathlib.  The complete source is available at
+\url{https://github.com/carlok/erdos-straus-offset-lean}.  Its public positive
+interface consists of:
 \begin{itemize}
   \item \texttt{IsES} and \texttt{isES\_of\_polynomial};
   \item \texttt{isES\_of\_offset\_certificate};
