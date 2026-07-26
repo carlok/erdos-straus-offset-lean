@@ -349,6 +349,64 @@ theorem isES {p d n : ℕ} (h : OffsetAdmissible p d n) :
 
 end OffsetAdmissible
 
+/-! ## Transport through a fixed-divisor period -/
+
+/-- The offset denominator changes linearly under the period `4 * p * d`. -/
+theorem offsetX_add_period (p d n k : ℕ)
+    (hp4 : p % 4 = 3) (hn4 : n % 4 = 1) :
+    offsetX p (n + 4 * p * d * k) = offsetX p n + p * d * k := by
+  have hfour : 4 ∣ n + p := by
+    apply Nat.dvd_of_mod_eq_zero
+    omega
+  have hbase : 4 * offsetX p n = n + p := by
+    exact Nat.mul_div_cancel' hfour
+  change (n + 4 * p * d * k + p) / 4 = (n + p) / 4 + p * d * k
+  have hperiod : 4 * p * d * k = 4 * (p * d * k) := by ring
+  rw [hperiod]
+  omega
+
+/-- Exact transport identity for the associated product `B_p`. -/
+theorem offsetB_add_period (p d n k : ℕ)
+    (hp4 : p % 4 = 3) (hn4 : n % 4 = 1) :
+    offsetB p (n + 4 * p * d * k) =
+      offsetB p n +
+        p * d * k * (n + 4 * offsetX p n + 4 * p * d * k) := by
+  unfold offsetB
+  rw [offsetX_add_period p d n k hp4 hn4]
+  ring
+
+namespace OffsetAdmissible
+
+/-- Admissibility is preserved on adding any multiple of the period `4*p*d`. -/
+theorem add_period {p d n : ℕ} (h : OffsetAdmissible p d n) (k : ℕ) :
+    OffsetAdmissible p d (n + 4 * p * d * k) := by
+  rcases h with ⟨hn, hp, hp4, hn4, hpn, hd, hdb, hfirst⟩
+  have hperiod4 : 4 ∣ 4 * p * d * k := by
+    refine ⟨p * d * k, ?_⟩
+    ring
+  have hperiodp : p ∣ 4 * p * d * k := by
+    refine ⟨4 * d * k, ?_⟩
+    ring
+  have hB := offsetB_add_period p d n k hp4 hn4
+  let q := n + 4 * offsetX p n + 4 * p * d * k
+  have hdeltaD : d ∣ p * d * k * q := by
+    refine ⟨p * k * q, ?_⟩
+    ring
+  have hdeltaP : p ∣ p * d * k * q := by
+    refine ⟨d * k * q, ?_⟩
+    ring
+  refine ⟨by omega, hp, hp4, ?_, ?_, hd, ?_, ?_⟩
+  · simp [Nat.add_mod, Nat.mod_eq_zero_of_dvd hperiod4, hn4]
+  · intro hnew
+    exact hpn ((Nat.dvd_add_iff_left hperiodp).mpr hnew)
+  · rw [hB]
+    exact Nat.dvd_add hdb (by simpa [q] using hdeltaD)
+  · rw [hB]
+    convert Nat.dvd_add hfirst (by simpa [q] using hdeltaP) using 1
+    ring
+
+end OffsetAdmissible
+
 /-! ## Fully verified infinite families -/
 
 /-- Family I: `n = 12k+9`. -/

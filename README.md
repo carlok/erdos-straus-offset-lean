@@ -23,6 +23,9 @@ no computational coverage or density claim.
   divisions exact and all denominators positive, and concludes `IsES`;
 - reducible `offsetX` and `offsetB` definitions, together with
   `OffsetAdmissible` and its packaged constructor `OffsetAdmissible.isES`;
+- the exact transport identities for `offsetX` and `offsetB`, and
+  `OffsetAdmissible.add_period`, preserving admissibility under
+  `n ↦ n + 4pdk`;
 - Family I and the `p = 3`, `d₁ = 2, 5` infinite progressions stated in the
   paper;
 - regression instances at `k = 0` and `k = 1` for every progression.
