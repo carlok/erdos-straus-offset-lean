@@ -57,14 +57,18 @@ exist \(x,y,z\in\N_{>0}\) satisfying
   \frac4n=\frac1x+\frac1y+\frac1z.
 \end{equation}
 The conjecture remains open.  We use the following classical algebraic
-reduction; see, for example, Mordell~\cite{Mordell}.
+reduction; for historical background, see Mordell~\cite{Mordell} and
+Vaughan~\cite{Vaughan}.
 
-Fix \(x\in\N_{>0}\) with \(4x>n\), and reduce
+Fix \(x\in\N_{>0}\) with \(4x>n\), and set
 \[
-  \frac4n-\frac1x=\frac{4x-n}{nx}=\frac ab,
-  \qquad \gcd(a,b)=1.
+  a=4x-n,\qquad b=nx.
 \]
-Multiplication and rearrangement give
+Then
+\[
+  \frac4n-\frac1x=\frac ab,
+\]
+and multiplication and rearrangement give
 \begin{equation}\label{eq:split}
   (ay-b)(az-b)=b^2.
 \end{equation}
@@ -78,17 +82,18 @@ and
 \[
   ay=b+d_1,\qquad az=b+d_2.
 \]
-Then \((x,y,z)\) satisfies \eqref{eq:ES}.
+Then \((x,y,z)\) satisfies~\eqref{eq:ES}.
 \end{lemma}
 
 \begin{proof}
-The last three equations are precisely the factorisation
-\eqref{eq:split}.  Expanding it and using \(a=4x-n\) and \(b=nx\) gives
+The last three equations are precisely the
+factorisation~\eqref{eq:split}.  Expanding it and using \(a=4x-n\) and \(b=nx\)
+gives
 \[
   4xyz=n(xy+xz+yz).
 \]
-All four variables \(n,x,y,z\) are nonzero, so division by \(nxyz\) gives
-\eqref{eq:ES}.
+All four variables \(n,x,y,z\) are nonzero, so division by \(nxyz\)
+gives~\eqref{eq:ES}.
 \end{proof}
 
 The Lean development separates these two steps.  It first proves the
@@ -106,7 +111,7 @@ Let \(n,x,p,b,d_1,d_2,y,z\in\N\), with \(n,x,p,y,z>0\).  If
   4x &= n+p,                 & b &= nx, \label{eq:certificate-a}\\
   d_1d_2 &= b^2,             & py &= b+d_1,\qquad pz=b+d_2, \label{eq:certificate-b}
 \end{align}
-then \((x,y,z)\) satisfies \eqref{eq:ES}.
+then \((x,y,z)\) satisfies~\eqref{eq:ES}.
 \end{theorem}
 
 \begin{proof}
@@ -115,12 +120,12 @@ substitution in the cross-multiplied target leaves the multiple
 \[
   p\,(d_1d_2-b^2),
 \]
-which vanishes by \eqref{eq:certificate-b}.  Positivity then permits passage to
+which vanishes by~\eqref{eq:certificate-b}.  Positivity then permits passage to
 the rational identity.
 \end{proof}
 
 In Lean, \texttt{IsES n x y z} contains both the four positivity assertions and
-the equality \eqref{eq:ES} in \(\Q\).  Theorem~\ref{thm:certificate} is the
+the equality~\eqref{eq:ES} in \(\Q\).  Theorem~\ref{thm:certificate} is the
 declaration \texttt{isES\_of\_offset\_certificate}.
 
 \section{The constructive offset theorem}
@@ -145,8 +150,8 @@ equivalently \(d_1\equiv-b\pmod p\).  Define
   y=\frac{b+d_1}{p},\qquad
   z=\frac{b+d_2}{p}.
 \end{equation}
-Then \(x,y,z\in\N_{>0}\), all divisions in \eqref{eq:witnesses} are exact, and
-\((x,y,z)\) satisfies \eqref{eq:ES}.
+Then \(x,y,z\in\N_{>0}\), all divisions in~\eqref{eq:witnesses} are exact, and
+\((x,y,z)\) satisfies~\eqref{eq:ES}.
 \end{theorem}
 
 \begin{proof}
@@ -156,7 +161,7 @@ The congruences on \(n\) and \(p\) show that \(4\mid n+p\), so \(x\in\N\) and
 
 Since \(d_1\mid b\), the quotient \(d_2=b^2/d_1\) is exact and positive.  It
 remains to prove \(p\mid b+d_2\).  Work in the field \(\Z/p\Z\).
-Condition \eqref{eq:first-congruence} gives
+Condition~\eqref{eq:first-congruence} gives
 \[
   d_1=-b.
 \]
@@ -165,8 +170,8 @@ cancel \(d_1\) to obtain
 \[
   d_2=-b,
 \]
-and therefore \(p\mid b+d_2\).  Both definitions of \(y,z\) in
-\eqref{eq:witnesses} are consequently exact.  Their numerators are positive,
+and therefore \(p\mid b+d_2\).  Both definitions of \(y,z\)
+in~\eqref{eq:witnesses} are consequently exact.  Their numerators are positive,
 so \(y,z>0\).  Theorem~\ref{thm:certificate} now applies.
 \end{proof}
 
@@ -226,14 +231,14 @@ For \(n_k=n+4pdk\), exact division gives
 \begin{equation}\label{eq:x-transport}
   X_p(n_k)=X_p(n)+pdk.
 \end{equation}
-Expanding \(B_p(n_k)=n_kX_p(n_k)\) using
-\eqref{eq:x-transport} gives the exact identity
+Expanding \(B_p(n_k)=n_k X_p(n_k)\) using~\eqref{eq:x-transport} gives the exact
+identity
 \begin{equation}\label{eq:b-transport}
   B_p(n_k)
   =
   B_p(n)+pdk\bigl(n+4X_p(n)+4pdk\bigr).
 \end{equation}
-The added term in \eqref{eq:b-transport} is divisible by both \(d\) and \(p\).
+The added term in~\eqref{eq:b-transport} is divisible by both \(d\) and \(p\).
 It follows respectively that \(d\mid B_p(n_k)\) and
 \(p\mid B_p(n_k)+d\).  Also \(n_k\equiv n\pmod4\) and
 \(n_k\equiv n\pmod p\), so the two modular hypotheses are preserved; all other
@@ -361,7 +366,8 @@ Academic Press, 1969.
 \bibitem{Vaughan}
 R.~C.~Vaughan,
 \emph{On a problem of Erdős, Straus and Schinzel},
-J. London Math. Soc. (2) 2 (1970), 391--396.
+Mathematika 17 (1970), 193--198,
+\href{https://doi.org/10.1112/S0025579300002886}{doi:10.1112/S0025579300002886}.
 
 \bibitem{mathlib}
 The Mathlib Community,

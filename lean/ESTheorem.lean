@@ -13,7 +13,7 @@
       (H5)  p * z   = b + d2          z  = (b+d2)/p
       (H6)  p ≠ 0
   Then  4 * x * y * z = n * (x*y + x*z + y*z).
-  For positive x, y, z this integer identity is equivalent to
+  For positive n, x, y, z this integer identity is equivalent to
                                     4/n = 1/x + 1/y + 1/z.
   ==================================================================
 
@@ -34,8 +34,8 @@ lemma sq_nezero_int (q : ℤ) (hq : q ≠ 0) : q * q ≠ 0 := by
   intro h
   exact hq ((Int.mul_eq_zero.mp h).elim id id)
 
-/-- The polynomial form of the Erdős–Straus identity.  For positive x, y, z this
-is equivalent to 4/n = 1/x + 1/y + 1/z:
+/-- The polynomial form of the Erdős–Straus identity.  For positive n, x, y, z
+this is equivalent to 4/n = 1/x + 1/y + 1/z:
     4 * x * y * z = n * (x*y + x*z + y*z). -/
 theorem es_polynomial (n x y z : ℤ)
     (h : 4 * x * y * z = n * (x * y + x * z + y * z)) :
