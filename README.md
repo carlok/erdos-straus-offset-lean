@@ -21,6 +21,8 @@ no computational coverage or density claim.
 - complementary-factor cancellation in `ZMod p`;
 - `constructive_offset`, which constructs the natural denominators, proves all
   divisions exact and all denominators positive, and concludes `IsES`;
+- reducible `offsetX` and `offsetB` definitions, together with
+  `OffsetAdmissible` and its packaged constructor `OffsetAdmissible.isES`;
 - Family I and the `p = 3`, `d₁ = 2, 5` infinite progressions stated in the
   paper;
 - regression instances at `k = 0` and `k = 1` for every progression.

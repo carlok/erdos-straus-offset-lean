@@ -312,6 +312,43 @@ example : IsES 5 2 4 20 := by
     (by norm_num) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
     (by norm_num) (by norm_num) (by norm_num) (by norm_num) (by norm_num)
 
+/-! ## Packaged offset admissibility -/
+
+/-- The offset denominator \(X_p(n)=(n+p)/4\). -/
+@[reducible] def offsetX (p n : ℕ) : ℕ := (n + p) / 4
+
+/-- The associated product \(B_p(n)=nX_p(n)\). -/
+@[reducible] def offsetB (p n : ℕ) : ℕ := n * offsetX p n
+
+/-- `OffsetAdmissible p d n` packages exactly the hypotheses of
+`constructive_offset` for the fixed divisor `d`. -/
+def OffsetAdmissible (p d n : ℕ) : Prop :=
+  2 ≤ n ∧
+  Nat.Prime p ∧
+  p % 4 = 3 ∧
+  n % 4 = 1 ∧
+  ¬ p ∣ n ∧
+  0 < d ∧
+  d ∣ offsetB p n ∧
+  p ∣ offsetB p n + d
+
+namespace OffsetAdmissible
+
+/-- An admissible offset constructs a positive Erdős--Straus representation.
+This is a packaged invocation of `constructive_offset`. -/
+theorem isES {p d n : ℕ} (h : OffsetAdmissible p d n) :
+    let x := offsetX p n
+    let b := offsetB p n
+    let d2 := b * b / d
+    let y := (b + d) / p
+    let z := (b + d2) / p
+    IsES n x y z := by
+  rcases h with ⟨hn, hp, hp4, hn4, hpn, hd, hdb, hfirst⟩
+  simpa [offsetX, offsetB] using
+    constructive_offset n p d hn hp hp4 hn4 hpn hd hdb hfirst
+
+end OffsetAdmissible
+
 /-! ## Fully verified infinite families -/
 
 /-- Family I: `n = 12k+9`. -/
