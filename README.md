@@ -26,6 +26,9 @@ no computational coverage or density claim.
 - the exact transport identities for `offsetX` and `offsetB`, and
   `OffsetAdmissible.add_period`, preserving admissibility under
   `n ↦ n + 4pdk`;
+- `fixed_d_progression`, which constructs an `IsES` witness at every transported
+  parameter, and `fixed_d_progression_strictMono`, proving those parameters
+  form an infinite arithmetic progression;
 - Family I and the `p = 3`, `d₁ = 2, 5` infinite progressions stated in the
   paper;
 - regression instances at `k = 0` and `k = 1` for every progression.

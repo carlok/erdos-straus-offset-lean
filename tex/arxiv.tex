@@ -43,9 +43,10 @@ condition indexed by a prime \(p\equiv3\pmod4\).  Its full positive-integer
 statement is formalised in Lean~4 with Mathlib: the development constructs the
 denominators by natural-number division, proves the divisions exact and the
 denominators positive, and concludes the equality in \(\Q\).  We also formalise
-three groups of explicit infinite families, including the progressions arising
-from \(p=3\) and \(d_1=2,5\).  We make no claim toward resolving the
-Erdős--Straus conjecture and no priority claim for the underlying construction.
+a fixed-divisor lifting theorem and three groups of explicit infinite families,
+including the progressions arising from \(p=3\) and \(d_1=2,5\).  We make no
+claim toward resolving the Erdős--Straus conjecture and no priority claim for
+the underlying construction.
 \end{abstract}
 
 \section{The divisor split}
@@ -175,6 +176,76 @@ proof implements this step in \texttt{ZMod p}; the remainder of the construction
 uses natural numbers, with the final equality stated over the rationals.
 \end{remark}
 
+\section{Fixed-divisor lifting}
+
+For fixed \(p\), define
+\[
+  X_p(n)=\frac{n+p}{4},
+  \qquad
+  B_p(n)=nX_p(n),
+\]
+where division is natural-number division.  Call a triple \((p,d,n)\)
+\emph{offset-admissible} if
+\[
+\begin{gathered}
+  n\ge2,\quad p\ \text{prime},\quad
+  p\equiv3\pmod4,\quad n\equiv1\pmod4,\quad p\nmid n,\\
+  d>0,\quad d\mid B_p(n),\quad p\mid B_p(n)+d.
+\end{gathered}
+\]
+These are exactly the hypotheses of Theorem~\ref{thm:offset}, packaged with a
+fixed divisor \(d\).
+
+\begin{theorem}[fixed-divisor lifting]\label{thm:lifting}
+If \((p,d,n)\) is offset-admissible, then for every \(k\in\N\),
+\[
+  n_k=n+4pdk
+\]
+is offset-admissible for the same \(p,d\).  Consequently, on setting
+\[
+  x_k=X_p(n_k),\qquad b_k=B_p(n_k),\qquad
+  d_{2,k}=\frac{b_k^2}{d},
+\]
+the positive natural numbers
+\[
+  y_k=\frac{b_k+d}{p},
+  \qquad
+  z_k=\frac{b_k+d_{2,k}}{p}
+\]
+satisfy
+\[
+  \frac4{n_k}=\frac1{x_k}+\frac1{y_k}+\frac1{z_k}.
+\]
+Moreover, \(k\mapsto n_k\) is strictly increasing, so these parameters form an
+infinite arithmetic progression.
+\end{theorem}
+
+\begin{proof}
+The congruences defining admissibility make \(n+p\) divisible by \(4\).
+For \(n_k=n+4pdk\), exact division gives
+\begin{equation}\label{eq:x-transport}
+  X_p(n_k)=X_p(n)+pdk.
+\end{equation}
+Expanding \(B_p(n_k)=n_kX_p(n_k)\) using
+\eqref{eq:x-transport} gives the exact identity
+\begin{equation}\label{eq:b-transport}
+  B_p(n_k)
+  =
+  B_p(n)+pdk\bigl(n+4X_p(n)+4pdk\bigr).
+\end{equation}
+The added term in \eqref{eq:b-transport} is divisible by both \(d\) and \(p\).
+It follows respectively that \(d\mid B_p(n_k)\) and
+\(p\mid B_p(n_k)+d\).  Also \(n_k\equiv n\pmod4\) and
+\(n_k\equiv n\pmod p\), so the two modular hypotheses are preserved; all other
+admissibility conditions are unchanged or immediate from \(n_k\ge n\).
+Theorem~\ref{thm:offset} supplies the displayed positive representation,
+including exactness of all divisions.  Finally,
+\[
+  n_{k+1}-n_k=4pd>0
+\]
+because a prime \(p\) and the admissible divisor \(d\) are positive.
+\end{proof}
+
 \section{Explicit infinite families}
 
 We record the families formalised in the accompanying Lean file.  In every
@@ -212,9 +283,9 @@ Put \(x=(n+3)/4\) and \(b=nx\).  Then
 \end{corollary}
 
 \begin{proof}
-For both progressions, \(n\equiv1\pmod4\), \(3\nmid n\),
-\(2\mid b\), and \(3\mid b+2\).  Theorem~\ref{thm:offset} applies with
-\(p=3\) and \(d_1=2\).
+The triples \((3,2,5)\) and \((3,2,13)\) are offset-admissible.  Applying
+Theorem~\ref{thm:lifting} gives periods \(4\cdot3\cdot2=24\) and hence the two
+displayed progressions.
 \end{proof}
 
 \begin{corollary}[\(p=3,d_1=5\)]\label{cor:d5}
@@ -233,9 +304,12 @@ Put \(x=(n+3)/4\) and \(b=nx\).  Then
 \end{corollary}
 
 \begin{proof}
-Each progression satisfies \(n\equiv1\pmod4\) and \(3\nmid n\).  Direct
-factorisation of either \(n\) or \(x=(n+3)/4\) gives \(5\mid b\), while
-\(3\mid b+5\).  Apply Theorem~\ref{thm:offset} with \(p=3\) and \(d_1=5\).
+The triples with \(p=3,d_1=5\) and seeds
+\[
+  n\in\{5,17,25,37\}
+\]
+are offset-admissible.  Theorem~\ref{thm:lifting} gives period
+\(4\cdot3\cdot5=60\), yielding the four displayed progressions.
 \end{proof}
 
 The two progressions in Corollary~\ref{cor:d2} are the nonmultiples of \(3\)
@@ -258,6 +332,8 @@ with Mathlib.  Its public positive interface consists of:
         \texttt{OffsetAdmissible.isES};
   \item \texttt{offsetX\_add\_period}, \texttt{offsetB\_add\_period}, and
         \texttt{OffsetAdmissible.add\_period};
+  \item \texttt{fixed\_d\_progression} and
+        \texttt{fixed\_d\_progression\_strictMono};
   \item \texttt{family\_I\_positive}, \texttt{family\_d2\_24k5},
         \texttt{family\_d2\_24k13}, and the four
         \texttt{family\_d5\_60k\(\cdot\)} declarations.

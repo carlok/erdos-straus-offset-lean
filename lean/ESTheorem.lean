@@ -407,6 +407,33 @@ theorem add_period {p d n : ℕ} (h : OffsetAdmissible p d n) (k : ℕ) :
 
 end OffsetAdmissible
 
+/-! ## Verified fixed-divisor progressions -/
+
+/-- Every point of a fixed-divisor admissible progression has a constructed
+positive Erdős--Straus representation. -/
+theorem fixed_d_progression {p d n : ℕ}
+    (h : OffsetAdmissible p d n) (k : ℕ) :
+    let n' := n + 4 * p * d * k
+    let x := offsetX p n'
+    let b := offsetB p n'
+    let d2 := b * b / d
+    let y := (b + d) / p
+    let z := (b + d2) / p
+    IsES n' x y z :=
+  (h.add_period k).isES
+
+/-- The parameters `n + 4*p*d*k` form a strictly increasing sequence. -/
+theorem fixed_d_progression_strictMono {p d n : ℕ}
+    (h : OffsetAdmissible p d n) :
+    StrictMono (fun k : ℕ => n + 4 * p * d * k) := by
+  rcases h with ⟨_, hp, _, _, _, hd, _, _⟩
+  have hp0 : 0 < p := hp.pos
+  intro a b hab
+  have hc : 0 < 4 * p * d := by positivity
+  have hm : (4 * p * d) * a < (4 * p * d) * b :=
+    (Nat.mul_lt_mul_left hc).mpr hab
+  exact Nat.add_lt_add_left hm n
+
 /-! ## Fully verified infinite families -/
 
 /-- Family I: `n = 12k+9`. -/
@@ -423,30 +450,33 @@ theorem family_I_positive (k : ℕ) :
   · positivity
   · ring
 
+private theorem admissible_d2_5 : OffsetAdmissible 3 2 5 := by
+  norm_num [OffsetAdmissible, offsetB, offsetX]
+
+private theorem admissible_d2_13 : OffsetAdmissible 3 2 13 := by
+  norm_num [OffsetAdmissible, offsetB, offsetX]
+
+private theorem admissible_d5_5 : OffsetAdmissible 3 5 5 := by
+  norm_num [OffsetAdmissible, offsetB, offsetX]
+
+private theorem admissible_d5_17 : OffsetAdmissible 3 5 17 := by
+  norm_num [OffsetAdmissible, offsetB, offsetX]
+
+private theorem admissible_d5_25 : OffsetAdmissible 3 5 25 := by
+  norm_num [OffsetAdmissible, offsetB, offsetX]
+
+private theorem admissible_d5_37 : OffsetAdmissible 3 5 37 := by
+  norm_num [OffsetAdmissible, offsetB, offsetX]
+
 /-- The `p=3, d1=2` progression `n = 24k+5`. -/
 theorem family_d2_24k5 (k : ℕ) :
     let n := 24 * k + 5
     let x := (n + 3) / 4
     let b := n * x
     IsES n x ((b + 2) / 3) ((b + b * b / 2) / 3) := by
-  dsimp only
-  apply constructive_offset (24 * k + 5) 3 2
-  · omega
-  · norm_num
-  · norm_num
-  · omega
-  · intro h
-    rcases h with ⟨c, hc⟩
-    omega
-  · norm_num
-  · have hx : (24 * k + 5 + 3) / 4 = 6 * k + 2 := by omega
-    rw [hx]
-    refine ⟨(24 * k + 5) * (3 * k + 1), ?_⟩
-    ring
-  · have hx : (24 * k + 5 + 3) / 4 = 6 * k + 2 := by omega
-    rw [hx]
-    refine ⟨48 * k * k + 26 * k + 4, ?_⟩
-    ring
+  have hn : 5 + 4 * 3 * 2 * k = 24 * k + 5 := by ring
+  simpa only [offsetX, offsetB, hn] using
+    fixed_d_progression admissible_d2_5 k
 
 /-- The `p=3, d1=2` progression `n = 24k+13`. -/
 theorem family_d2_24k13 (k : ℕ) :
@@ -454,24 +484,9 @@ theorem family_d2_24k13 (k : ℕ) :
     let x := (n + 3) / 4
     let b := n * x
     IsES n x ((b + 2) / 3) ((b + b * b / 2) / 3) := by
-  dsimp only
-  apply constructive_offset (24 * k + 13) 3 2
-  · omega
-  · norm_num
-  · norm_num
-  · omega
-  · intro h
-    rcases h with ⟨c, hc⟩
-    omega
-  · norm_num
-  · have hx : (24 * k + 13 + 3) / 4 = 6 * k + 4 := by omega
-    rw [hx]
-    refine ⟨(24 * k + 13) * (3 * k + 2), ?_⟩
-    ring
-  · have hx : (24 * k + 13 + 3) / 4 = 6 * k + 4 := by omega
-    rw [hx]
-    refine ⟨48 * k * k + 58 * k + 18, ?_⟩
-    ring
+  have hn : 13 + 4 * 3 * 2 * k = 24 * k + 13 := by ring
+  simpa only [offsetX, offsetB, hn] using
+    fixed_d_progression admissible_d2_13 k
 
 /-- The `p=3, d1=5` progression `n = 60k+5`. -/
 theorem family_d5_60k5 (k : ℕ) :
@@ -479,24 +494,9 @@ theorem family_d5_60k5 (k : ℕ) :
     let x := (n + 3) / 4
     let b := n * x
     IsES n x ((b + 5) / 3) ((b + b * b / 5) / 3) := by
-  dsimp only
-  apply constructive_offset (60 * k + 5) 3 5
-  · omega
-  · norm_num
-  · norm_num
-  · omega
-  · intro h
-    rcases h with ⟨c, hc⟩
-    omega
-  · norm_num
-  · have hx : (60 * k + 5 + 3) / 4 = 15 * k + 2 := by omega
-    rw [hx]
-    refine ⟨(12 * k + 1) * (15 * k + 2), ?_⟩
-    ring
-  · have hx : (60 * k + 5 + 3) / 4 = 15 * k + 2 := by omega
-    rw [hx]
-    refine ⟨300 * k * k + 65 * k + 5, ?_⟩
-    ring
+  have hn : 5 + 4 * 3 * 5 * k = 60 * k + 5 := by ring
+  simpa only [offsetX, offsetB, hn] using
+    fixed_d_progression admissible_d5_5 k
 
 /-- The `p=3, d1=5` progression `n = 60k+17`. -/
 theorem family_d5_60k17 (k : ℕ) :
@@ -504,24 +504,9 @@ theorem family_d5_60k17 (k : ℕ) :
     let x := (n + 3) / 4
     let b := n * x
     IsES n x ((b + 5) / 3) ((b + b * b / 5) / 3) := by
-  dsimp only
-  apply constructive_offset (60 * k + 17) 3 5
-  · omega
-  · norm_num
-  · norm_num
-  · omega
-  · intro h
-    rcases h with ⟨c, hc⟩
-    omega
-  · norm_num
-  · have hx : (60 * k + 17 + 3) / 4 = 15 * k + 5 := by omega
-    rw [hx]
-    refine ⟨(60 * k + 17) * (3 * k + 1), ?_⟩
-    ring
-  · have hx : (60 * k + 17 + 3) / 4 = 15 * k + 5 := by omega
-    rw [hx]
-    refine ⟨300 * k * k + 185 * k + 30, ?_⟩
-    ring
+  have hn : 17 + 4 * 3 * 5 * k = 60 * k + 17 := by ring
+  simpa only [offsetX, offsetB, hn] using
+    fixed_d_progression admissible_d5_17 k
 
 /-- The `p=3, d1=5` progression `n = 60k+25`. -/
 theorem family_d5_60k25 (k : ℕ) :
@@ -529,24 +514,9 @@ theorem family_d5_60k25 (k : ℕ) :
     let x := (n + 3) / 4
     let b := n * x
     IsES n x ((b + 5) / 3) ((b + b * b / 5) / 3) := by
-  dsimp only
-  apply constructive_offset (60 * k + 25) 3 5
-  · omega
-  · norm_num
-  · norm_num
-  · omega
-  · intro h
-    rcases h with ⟨c, hc⟩
-    omega
-  · norm_num
-  · have hx : (60 * k + 25 + 3) / 4 = 15 * k + 7 := by omega
-    rw [hx]
-    refine ⟨(12 * k + 5) * (15 * k + 7), ?_⟩
-    ring
-  · have hx : (60 * k + 25 + 3) / 4 = 15 * k + 7 := by omega
-    rw [hx]
-    refine ⟨300 * k * k + 265 * k + 60, ?_⟩
-    ring
+  have hn : 25 + 4 * 3 * 5 * k = 60 * k + 25 := by ring
+  simpa only [offsetX, offsetB, hn] using
+    fixed_d_progression admissible_d5_25 k
 
 /-- The `p=3, d1=5` progression `n = 60k+37`. -/
 theorem family_d5_60k37 (k : ℕ) :
@@ -554,24 +524,9 @@ theorem family_d5_60k37 (k : ℕ) :
     let x := (n + 3) / 4
     let b := n * x
     IsES n x ((b + 5) / 3) ((b + b * b / 5) / 3) := by
-  dsimp only
-  apply constructive_offset (60 * k + 37) 3 5
-  · omega
-  · norm_num
-  · norm_num
-  · omega
-  · intro h
-    rcases h with ⟨c, hc⟩
-    omega
-  · norm_num
-  · have hx : (60 * k + 37 + 3) / 4 = 15 * k + 10 := by omega
-    rw [hx]
-    refine ⟨(60 * k + 37) * (3 * k + 2), ?_⟩
-    ring
-  · have hx : (60 * k + 37 + 3) / 4 = 15 * k + 10 := by omega
-    rw [hx]
-    refine ⟨300 * k * k + 385 * k + 125, ?_⟩
-    ring
+  have hn : 37 + 4 * 3 * 5 * k = 60 * k + 37 := by ring
+  simpa only [offsetX, offsetB, hn] using
+    fixed_d_progression admissible_d5_37 k
 
 /- Regression instances at `k=0` and `k=1` for every progression. -/
 
