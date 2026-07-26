@@ -635,6 +635,171 @@ theorem all_add_mul_iff {p d n T : ℕ} (h : OffsetAdmissible p d n)
       convert Nat.dvd_add hfirst hdeltaP using 1
       ring
 
+/-- The two divisor conditions in `all_add_mul_iff` force the fixed divisor to
+divide the quarter-step.  Admissibility is essential here. -/
+private theorem divisor_dvd_quarter_step {p d n u : ℕ}
+    (h : OffsetAdmissible p d n) (hu : 0 < u)
+    (hquad : d ∣ 8 * u * u)
+    (hlin : d ∣ u * (n + 4 * offsetX p n + 4 * u)) :
+    d ∣ u := by
+  rcases h with ⟨hn, hp, hp4, hn4, hpn, hd, hdb, hfirst⟩
+  have hd0 : d ≠ 0 := ne_of_gt hd
+  have hu0 : u ≠ 0 := ne_of_gt hu
+  have hfour : 4 ∣ n + p := by
+    apply Nat.dvd_of_mod_eq_zero
+    omega
+  have hxrel : 4 * offsetX p n = n + p := by
+    exact Nat.mul_div_cancel' hfour
+  have hCrel : n + 4 * offsetX p n = 2 * n + p := by omega
+  apply (Nat.factorization_le_iff_dvd hd0 hu0).mp
+  intro q
+  by_cases hq : Nat.Prime q
+  · by_contra hle
+    have hfdpos : 1 ≤ d.factorization q := by omega
+    have hqd : q ∣ d :=
+      (hq.dvd_iff_one_le_factorization hd0).2 hfdpos
+    have hqB : q ∣ offsetB p n := hqd.trans hdb
+    have hqC : ¬ q ∣ n + 4 * offsetX p n := by
+      intro hqC
+      have hqp : q ∣ p := by
+        rcases hq.dvd_mul.mp (by simpa [offsetB] using hqB) with hqn | hqx
+        · have hq2n : q ∣ 2 * n := by
+            simpa [mul_comm] using dvd_mul_of_dvd_right hqn 2
+          rw [hCrel] at hqC
+          have hsub := Nat.dvd_sub hqC hq2n
+          convert hsub using 1
+          omega
+        · have hq4x : q ∣ 4 * offsetX p n := by
+            simpa [mul_comm] using dvd_mul_of_dvd_right hqx 4
+          rw [hxrel] at hq4x
+          rw [hCrel] at hqC
+          have hqn0 := Nat.dvd_sub hqC hq4x
+          have hqn : q ∣ n := by
+            convert hqn0 using 1
+            omega
+          have hqp0 := Nat.dvd_sub hq4x hqn
+          convert hqp0 using 1
+          omega
+      have hqp_eq : q = p := (Nat.prime_dvd_prime_iff_eq hq hp).1 hqp
+      subst q
+      exact hpn ((hp.dvd_mul.mp (by simpa [offsetB] using hqB)).resolve_right
+        (by
+          intro hpx
+          have hp4x : p ∣ 4 * offsetX p n := by
+            simpa [mul_comm] using dvd_mul_of_dvd_right hpx 4
+          rw [hxrel] at hp4x
+          exact hpn ((Nat.dvd_add_iff_left (dvd_refl p)).mpr hp4x)))
+    have hqv : ¬ q ∣ n + 4 * offsetX p n + 4 * u := by
+      by_cases hqu : q ∣ u
+      · intro hqv
+        have hq4u : q ∣ 4 * u := by
+          simpa [mul_comm] using dvd_mul_of_dvd_right hqu 4
+        exact hqC (by
+          have hsub := Nat.dvd_sub hqv hq4u
+          convert hsub using 1
+          omega)
+      · have hq8u : q ∣ 8 * u * u := hqd.trans hquad
+        have hq8 : q ∣ 8 := by
+          rcases hq.dvd_mul.mp hq8u with hq8u | hqu'
+          · rcases hq.dvd_mul.mp hq8u with hq8 | hqu'
+            · exact hq8
+            · exact (hqu hqu').elim
+          · exact (hqu hqu').elim
+        have hqpow : q ∣ 2 ^ 3 := by simpa using hq8
+        have hqeq : q = 2 :=
+          Nat.prime_eq_prime_of_dvd_pow hq Nat.prime_two hqpow
+        subst q
+        intro h2v
+        have hvmod := Nat.mod_eq_zero_of_dvd h2v
+        omega
+    have hpowd : q ^ d.factorization q ∣ d :=
+      (hq.pow_dvd_iff_le_factorization hd0).2 le_rfl
+    have hpowprod :
+        q ^ d.factorization q ∣
+          u * (n + 4 * offsetX p n + 4 * u) :=
+      hpowd.trans hlin
+    have hpowu : q ^ d.factorization q ∣ u :=
+      (Nat.prime_iff.mp hq).pow_dvd_of_dvd_mul_right _ hqv hpowprod
+    exact hle ((hq.pow_dvd_iff_le_factorization hu0).1 hpowu)
+  · simp [Nat.factorization_eq_zero_of_not_prime, hq]
+
+/-- Every positive transport period is a multiple of `4 * p * d`. -/
+theorem period_dvd {p d n T : ℕ} (h : OffsetAdmissible p d n)
+    (hT0 : 0 < T)
+    (hall : ∀ k : ℕ, OffsetAdmissible p d (n + T * k)) :
+    4 * p * d ∣ T := by
+  have hchar := (h.all_add_mul_iff hT0).1 hall
+  rcases hchar with ⟨h4, hpT, hquad, hlin⟩
+  rcases h4 with ⟨u, rfl⟩
+  have hu : 0 < u := by omega
+  have hpu : p ∣ u := by
+    rcases h with ⟨hn, hp, hp4, hn4, hpn, hd, hdb, hfirst⟩
+    have hp4not : ¬ p ∣ 4 := by
+      intro hp4dvd
+      have hp_le : p ≤ 4 := Nat.le_of_dvd (by norm_num) hp4dvd
+      have hp_ge : 2 ≤ p := hp.two_le
+      have : p = 3 := by omega
+      subst p
+      norm_num at hp4dvd
+    rcases hp.dvd_mul.mp (by simpa [mul_assoc] using hpT) with hp4dvd | hpu
+    · exact (hp4not hp4dvd).elim
+    · exact hpu
+  have hdu : d ∣ u := by
+    apply divisor_dvd_quarter_step h hu
+    · simpa using hquad
+    · simpa [mul_add, add_mul, mul_assoc, mul_comm, mul_left_comm] using hlin
+  have hpd : Nat.Coprime p d := by
+    rcases h with ⟨hn, hp, hp4, hn4, hpn, hd, hdb, hfirst⟩
+    apply hp.coprime_iff_not_dvd.2
+    intro hpd
+    have hpB : p ∣ offsetB p n := hpd.trans hdb
+    exact hpn ((hp.dvd_mul.mp (by simpa [offsetB] using hpB)).resolve_right
+      (by
+        intro hpx
+        have hfour : 4 ∣ n + p := by
+          apply Nat.dvd_of_mod_eq_zero
+          omega
+        have hxrel : 4 * offsetX p n = n + p :=
+          Nat.mul_div_cancel' hfour
+        have hp4x : p ∣ 4 * offsetX p n := by
+          simpa [mul_comm] using dvd_mul_of_dvd_right hpx 4
+        rw [hxrel] at hp4x
+        exact hpn ((Nat.dvd_add_iff_left (dvd_refl p)).mpr hp4x)))
+  have hpdu : p * d ∣ u :=
+    hpd.mul_dvd_of_dvd_of_dvd hpu hdu
+  rcases hpdu with ⟨c, hc⟩
+  refine ⟨c, ?_⟩
+  rw [hc]
+  ring
+
+/-- A positive step preserves every transported seed exactly when it is a
+multiple of `4 * p * d`. -/
+theorem all_add_mul_iff_period_dvd {p d n T : ℕ}
+    (h : OffsetAdmissible p d n) (hT0 : 0 < T) :
+    (∀ k : ℕ, OffsetAdmissible p d (n + T * k)) ↔
+      4 * p * d ∣ T := by
+  constructor
+  · exact h.period_dvd hT0
+  · rintro ⟨c, rfl⟩ k
+    simpa [mul_assoc, mul_comm, mul_left_comm] using h.add_period (c * k)
+
+/-- The least positive transport period of every admissible seed is exactly
+`4 * p * d`. -/
+theorem least_positive_period {p d n : ℕ} (h : OffsetAdmissible p d n) :
+    IsLeast
+      {T : ℕ | 0 < T ∧ ∀ k : ℕ, OffsetAdmissible p d (n + T * k)}
+      (4 * p * d) := by
+  rcases h with ⟨hn, hp, hp4, hn4, hpn, hd, hdb, hfirst⟩
+  have hbase : OffsetAdmissible p d n :=
+    ⟨hn, hp, hp4, hn4, hpn, hd, hdb, hfirst⟩
+  constructor
+  · constructor
+    · exact Nat.mul_pos (Nat.mul_pos (by norm_num) hp.pos) hd
+    · intro k
+      simpa [mul_assoc] using hbase.add_period k
+  · intro T hT
+    exact Nat.le_of_dvd hT.1 (hbase.period_dvd hT.1 hT.2)
+
 end OffsetAdmissible
 
 /-! ## Fully verified infinite families
@@ -677,6 +842,13 @@ private theorem admissible_d5_37 : OffsetAdmissible 3 5 37 := by
 example : ¬ ∀ k : ℕ, OffsetAdmissible 3 2 (5 + 12 * k) := by
   rw [admissible_d2_5.all_add_mul_iff (by norm_num : 0 < 12)]
   norm_num [offsetX]
+
+/-- The least positive transport period of the same seed is exactly `24`. -/
+example :
+    IsLeast
+      {T : ℕ | 0 < T ∧ ∀ k : ℕ, OffsetAdmissible 3 2 (5 + T * k)}
+      24 := by
+  simpa using admissible_d2_5.least_positive_period
 
 /-- The `p=3, d1=2` progression `n = 24k+5`. -/
 theorem family_d2_24k5 (k : ℕ) :

@@ -29,6 +29,9 @@ symbolic construction and the explicitly listed families.
   step `T` to preserve every member of an admissible seed progression:
   writing `u = T / 4`, it requires `4 ∣ T`, `p ∣ T`,
   `d ∣ 8u²`, and `d ∣ u(n + 4 offsetX p n + 4u)`;
+- `OffsetAdmissible.all_add_mul_iff_period_dvd` and
+  `OffsetAdmissible.least_positive_period`, proving that these conditions reduce
+  to `4pd ∣ T` and hence that `4pd` is the least positive transport period;
 - `fixed_d_progression`, which constructs an `IsES` witness at every transported
   parameter, and `fixed_d_progression_strictMono`, proving those parameters
   form an infinite arithmetic progression;

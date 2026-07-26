@@ -44,11 +44,11 @@ condition indexed by a prime \(p\equiv3\pmod4\).  Its full positive-integer
 statement is formalised in Lean~4 with Mathlib: the development constructs the
 denominators by natural-number division, proves the divisions exact and the
 denominators positive, and concludes the equality in \(\Q\).  We also formalise
-a fixed-divisor lifting theorem, an exact divisibility test for arbitrary
-transport steps, and three groups of explicit infinite families, including the
-progressions arising from \(p=3\) and \(d_1=2,5\).  We make no claim toward
-resolving the Erdős--Straus conjecture; the underlying divisor split is
-classical.
+a fixed-divisor lifting theorem, prove that \(4pd\) is its least positive
+transport period, and give three groups of explicit infinite families,
+including the progressions arising from \(p=3\) and \(d_1=2,5\).  We make no
+claim toward resolving the Erdős--Straus conjecture; the underlying divisor
+split is classical.
 \end{abstract}
 
 \section{The divisor split}
@@ -253,12 +253,11 @@ including exactness of all divisions.  Finally,
 because a prime \(p\) and the admissible divisor \(d\) are positive.
 \end{proof}
 
-\section{An exact test for transport steps}
+\section{Exact and least transport steps}
 
 The step \(4pd\) in Theorem~\ref{thm:lifting} is sufficient, but its proof does
 not by itself decide whether a smaller step works for a particular admissible
-seed.  The following criterion answers that question without asserting that
-\(4pd\) is always minimal.
+seed.  The following criterion answers that question.
 
 \begin{theorem}[transport-step criterion]\label{thm:period-test}
 Let \((p,d,n)\) be offset-admissible and let \(T>0\).  Put \(u=T/4\), using
@@ -305,9 +304,47 @@ Conversely, the four conditions preserve respectively the congruence modulo
 every transported triple is offset-admissible.
 \end{proof}
 
-For example, the criterion proves directly that \(T=12\) does not preserve the
-seed \((p,d,n)=(3,2,5)\), whereas Theorem~\ref{thm:lifting} supplies the step
-\(T=24\).  This negative check is included as a Lean regression.
+\begin{theorem}[least transport period]\label{thm:least-period}
+For every offset-admissible \((p,d,n)\) and every \(T>0\),
+\[
+  (p,d,n+Tk)\ \text{is offset-admissible for every }k\in\N
+  \quad\Longleftrightarrow\quad
+  4pd\mid T.
+\]
+Consequently, \(4pd\) is the least positive transport period.
+\end{theorem}
+
+\begin{proof}
+Only necessity remains after Theorem~\ref{thm:lifting}.  Apply
+Theorem~\ref{thm:period-test} and write \(T=4u\).  Since \(p\mid T\) and
+\(p\nmid4\), we have \(p\mid u\).
+
+We next prove \(d\mid u\).  Put \(C=n+4X_p(n)=2n+p\), and let \(q\) be any
+prime divisor of \(d\).  Since \(d\mid B_p(n)=nX_p(n)\), either \(q\mid n\) or
+\(q\mid X_p(n)\).  In the first case, \(q\mid C=2n+p\) would imply
+\(q\mid p\).  In the second, the identities \(4X_p(n)=n+p\) and
+\(C=(n+p)+n\) first imply \(q\mid n\), reducing to the first case.  Primality
+would then give \(q=p\), contrary to \(p\nmid n\).  Thus \(q\nmid C\).
+
+We claim that \(q\nmid C+4u\).  If \(q\mid u\), this follows immediately from
+\(q\nmid C\).  If \(q\nmid u\), the divisibilities \(q\mid d\) and
+\(d\mid8u^2\) force \(q\mid8\), hence \(q=2\).  But \(n\equiv1\pmod4\), so
+\(C+4u\) is odd, again a contradiction.
+
+Let \(q^e\) be the full \(q\)-power dividing \(d\).  From
+\[
+  d\mid u(C+4u)
+\]
+and \(q\nmid C+4u\), prime-power cancellation gives \(q^e\mid u\).
+This holds for every prime \(q\), so \(d\mid u\).  Finally \(p\) and \(d\) are
+coprime: if \(p\mid d\), then \(p\mid B_p(n)+d\) would imply
+\(p\mid B_p(n)\), contradicting \(p\nmid n\) and \(p\nmid X_p(n)\).
+Therefore \(pd\mid u\), and hence \(4pd\mid T\).
+\end{proof}
+
+For example, the theorem proves that the seed \((p,d,n)=(3,2,5)\) has least
+positive transport period \(24\); in particular, the tempting half-step
+\(T=12\) fails.  This negative check is included as a Lean regression.
 
 \section{Explicit infinite families}
 
@@ -400,6 +437,9 @@ interface consists of:
   \item \texttt{offsetX\_add\_general}, \texttt{offsetB\_add\_general},
         \texttt{poly\_dvd\_all}, and the exact transport-step criterion
         \texttt{OffsetAdmissible.all\_add\_mul\_iff};
+  \item \texttt{OffsetAdmissible.period\_dvd};
+  \item \texttt{OffsetAdmissible.all\_add\_mul\_iff\_period\_dvd};
+  \item \texttt{OffsetAdmissible.least\_positive\_period};
   \item \texttt{fixed\_d\_progression} and
         \texttt{fixed\_d\_progression\_strictMono};
   \item \texttt{family\_I\_positive}, \texttt{family\_d2\_24k5},
@@ -416,9 +456,9 @@ check of a polynomial identity.
 The divisor split is classical, and offset choices of \(x\) belong to the
 standard toolkit for Egyptian-fraction problems.  The contribution of this note
 is a compact theorem interface, an end-to-end Lean proof of the positive
-construction, an exact transport-step criterion, and a small collection of
-formally checked infinite specialisations.  The full Erdős--Straus conjecture
-remains outside its scope.
+construction, an exact transport-step criterion and least-period theorem, and a
+small collection of formally checked infinite specialisations.  The full
+Erdős--Straus conjecture remains outside its scope.
 
 \begin{thebibliography}{9}
 
