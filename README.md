@@ -34,6 +34,12 @@ symbolic construction and the explicitly listed families.
 
 The canonical paper is `tex/erdos-straus-offset.tex`.
 
+## Research prompts
+
+The [`prompts`](prompts/README.md) folder contains a conversational research
+game for finding small exact counterexamples, restricted theorems, and
+seed-to-family constructions, with a conservative gate for Lean formalisation.
+
 ## Build
 
 Lean:
