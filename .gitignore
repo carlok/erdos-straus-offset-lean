@@ -16,6 +16,8 @@ tex/*.fdb_latexmk
 .codegraph/
 .cursor/
 es2/
+priv/
 prompts/
 *.swp
 *~
+tmp_math/
